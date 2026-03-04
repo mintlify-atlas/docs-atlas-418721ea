@@ -1,97 +1,125 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction to marimo
+description: A reactive Python notebook that's reproducible, git-friendly, and deployable as scripts or apps
 ---
 
-## Setting up
+# Introduction to marimo
 
-Get your documentation site up and running in minutes.
+marimo is a reactive Python notebook that transforms how you work with data and code. Unlike traditional notebooks, marimo automatically runs dependent cells when you make changes, keeping your code, outputs, and program state perfectly synchronized.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Reactive by design" icon="bolt" href="/reactivity">
+    Run a cell and marimo automatically runs all dependent cells, eliminating hidden state and manual re-execution
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  
+  <Card title="Git-friendly notebooks" icon="code-branch" href="/creating-notebooks">
+    Notebooks stored as clean `.py` files that work seamlessly with version control
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  
+  <Card title="Deploy as apps" icon="rocket" href="/deploy-as-app">
+    Transform notebooks into interactive web apps with a single command
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  
+  <Card title="Interactive UI elements" icon="sliders" href="/interactive-elements">
+    Bind sliders, dropdowns, and plots to Python without writing callbacks
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What makes marimo different?
 
-Everything you need to create world-class documentation.
+marimo solves fundamental problems with traditional notebooks like Jupyter by guaranteeing that your notebook code, outputs, and program state are always consistent.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+### No hidden state
 
-## Need inspiration?
+Every time you run a cell, marimo analyzes your code and automatically runs cells that depend on it. Delete a cell and marimo scrubs its variables from memory. This eliminates the "run cells out of order" problem that plagues traditional notebooks.
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+```python
+import marimo as mo
+
+# When you change this slider...
+slider = mo.ui.slider(1, 10, value=5)
+slider
+```
+
+```python
+# ...marimo automatically re-runs this cell
+mo.md(f"The slider value is {slider.value}")
+```
+
+### Pure Python notebooks
+
+marimo notebooks are stored as pure Python files, not JSON. This means:
+
+- Clean diffs in version control
+- Easy code review
+- Import functions from one notebook into another
+- Execute notebooks as scripts: `python notebook.py`
+- Run tests with pytest
+
+### Batteries included
+
+marimo comes with everything you need:
+
+<CardGroup cols={3}>
+  <Card title="SQL support" icon="database">
+    Query dataframes, databases, and data warehouses with native SQL cells
+  </Card>
+  
+  <Card title="AI assistance" icon="sparkles">
+    Generate code with AI that understands your data context
+  </Card>
+  
+  <Card title="Rich UI library" icon="palette">
+    Sliders, tables, plots, chat interfaces, and 40+ interactive components
+  </Card>
+  
+  <Card title="Package management" icon="box">
+    Auto-install packages on import with built-in dependency tracking
+  </Card>
+  
+  <Card title="Interactive dataframes" icon="table">
+    Page, search, filter millions of rows with no code required
+  </Card>
+  
+  <Card title="Modern editor" icon="code">
+    GitHub Copilot, vim keybindings, variable explorer, fast completions
+  </Card>
+</CardGroup>
+
+## Use cases
+
+marimo excels at:
+
+- **Data exploration and analysis** - Interactive notebooks that stay consistent as you iterate
+- **Research and experimentation** - Reproducible notebooks you can trust
+- **Internal tools and dashboards** - Deploy notebooks as web apps without refactoring
+- **Teaching and learning** - Students see immediate feedback without hidden state confusion
+- **Reports and presentations** - Notebooks with dynamic markdown and beautiful layouts
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="play" href="/quickstart">
+    Install marimo and create your first notebook in minutes
+  </Card>
+  
+  <Card title="Key concepts" icon="book" href="/key-concepts">
+    Learn about reactivity, cells, and how marimo notebooks work
+  </Card>
+</CardGroup>
+
+<Note>
+  Try marimo instantly in your browser with [molab](https://molab.marimo.io/notebooks), our free online notebook environment.
+</Note>
+
+## Philosophy
+
+marimo is designed to be:
+
+1. **Simple** - Intuitive APIs that feel natural to Python developers
+2. **Immersive** - Focus on your work without wrestling with the tool
+3. **Interactive** - Immediate feedback as you code and explore data
+4. **Seamless** - Works with your existing tools and workflows
+5. **Fun** - Enjoyable to use for both quick experiments and serious projects
+
+We believe the tools we use shape how we think. marimo provides a better environment for research, experimentation, and communication with code.
