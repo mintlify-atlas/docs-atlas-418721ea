@@ -1,0 +1,222 @@
+{
+  "projectType": "saas",
+  "projectName": "marimo",
+  "projectDescription": "A reactive Python notebook for reproducible experiments, interactive apps, and executable scripts",
+  "theme": "palm",
+  "primaryColor": "#A463F2",
+  "lightColor": "#D4B4FF",
+  "darkColor": "#7B2FD4",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation",
+              "key-concepts"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "reactivity",
+              "interactive-elements",
+              "sql-queries",
+              "ai-code-generation",
+              "markdown"
+            ]
+          },
+          {
+            "group": "Working with Notebooks",
+            "pages": [
+              "creating-notebooks",
+              "running-notebooks",
+              "sharing-notebooks",
+              "converting-jupyter",
+              "package-management"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deploy-as-app",
+              "deploy-as-script",
+              "deploy-wasm",
+              "deployment-platforms"
+            ]
+          },
+          {
+            "group": "Data & Visualization",
+            "pages": [
+              "dataframes",
+              "plotting",
+              "sql-databases",
+              "data-explorer"
+            ]
+          },
+          {
+            "group": "Editor Features",
+            "pages": [
+              "code-completion",
+              "debugging",
+              "version-control",
+              "configuration",
+              "keyboard-shortcuts"
+            ]
+          },
+          {
+            "group": "Advanced Topics",
+            "pages": [
+              "state-management",
+              "expensive-notebooks",
+              "testing",
+              "custom-components",
+              "integrations"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview"
+            ]
+          },
+          {
+            "group": "Core API",
+            "pages": [
+              "api/app",
+              "api/cell"
+            ]
+          },
+          {
+            "group": "UI Elements",
+            "pages": [
+              "api/ui/button",
+              "api/ui/slider",
+              "api/ui/dropdown",
+              "api/ui/text",
+              "api/ui/checkbox",
+              "api/ui/radio",
+              "api/ui/multiselect",
+              "api/ui/date",
+              "api/ui/file",
+              "api/ui/table",
+              "api/ui/dataframe",
+              "api/ui/chat",
+              "api/ui/form",
+              "api/ui/batch"
+            ]
+          },
+          {
+            "group": "Visualization",
+            "pages": [
+              "api/plotting/altair",
+              "api/plotting/matplotlib",
+              "api/plotting/plotly"
+            ]
+          },
+          {
+            "group": "Layout",
+            "pages": [
+              "api/layout/hstack",
+              "api/layout/vstack",
+              "api/layout/tabs",
+              "api/layout/accordion",
+              "api/layout/sidebar",
+              "api/layout/callout"
+            ]
+          },
+          {
+            "group": "Output",
+            "pages": [
+              "api/output/markdown",
+              "api/output/html",
+              "api/output/json",
+              "api/output/image",
+              "api/output/video",
+              "api/output/audio"
+            ]
+          },
+          {
+            "group": "Data",
+            "pages": [
+              "api/data/sql",
+              "api/data/cache",
+              "api/data/state"
+            ]
+          },
+          {
+            "group": "AI",
+            "pages": [
+              "api/ai/overview",
+              "api/ai/chat",
+              "api/ai/completion"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/overview",
+              "cli/edit",
+              "cli/run",
+              "cli/convert",
+              "cli/export",
+              "cli/tutorial",
+              "cli/config"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Reactive notebook execution with automatic dependency tracking",
+    "Interactive UI elements (sliders, buttons, tables, dropdowns, chat)",
+    "Git-friendly storage as pure Python files",
+    "Built-in SQL support with multiple database engines",
+    "AI-native code generation and completion",
+    "Deploy as interactive web apps or executable scripts",
+    "Interactive dataframe viewer with filtering and sorting",
+    "Package management integration",
+    "Real-time collaboration support",
+    "VS Code and Cursor editor integration"
+  ],
+  "publicApiSurface": [
+    "marimo.ui.button",
+    "marimo.ui.slider",
+    "marimo.ui.dropdown",
+    "marimo.ui.text",
+    "marimo.ui.checkbox",
+    "marimo.ui.table",
+    "marimo.ui.dataframe",
+    "marimo.ui.chat",
+    "marimo.ui.form",
+    "marimo.md",
+    "marimo.sql",
+    "marimo.ai",
+    "marimo.hstack",
+    "marimo.vstack",
+    "marimo.tabs",
+    "marimo.state",
+    "marimo.cache",
+    "marimo.App",
+    "marimo edit",
+    "marimo run",
+    "marimo convert",
+    "marimo export",
+    "marimo tutorial"
+  ]
+}
