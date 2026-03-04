@@ -1,0 +1,78 @@
+---
+title: AI Overview
+---
+
+Marimo provides AI utilities for building chat interfaces and integrating with language models.
+
+## Available Modules
+
+### LLM Providers
+
+Marimo supports multiple LLM providers through the `mo.ai.llm` module:
+
+- **OpenAI**: `mo.ai.llm.openai`
+- **Anthropic**: `mo.ai.llm.anthropic`
+- **Google**: `mo.ai.llm.google`
+- **Groq**: `mo.ai.llm.groq`
+- **Bedrock**: `mo.ai.llm.bedrock`
+- **Pydantic AI**: `mo.ai.llm.pydantic_ai`
+
+## Core Types
+
+### ChatMessage
+
+A message in a chat.
+
+**Attributes:**
+- `role` (Literal["user", "assistant", "system"]): The role of the message
+- `content` (Any): The content of the message (can be a rich Python object)
+- `id` (str): The id of the message
+- `parts` (list[ChatPart]): Parts from AI SDK Stream Protocol (must be serializable to JSON)
+- `attachments` (Optional[list[ChatAttachment]]): Optional attachments to the message
+- `metadata` (Any | None): Optional metadata
+
+### ChatAttachment
+
+Represents a file attachment in a chat message.
+
+**Attributes:**
+- `url` (str): The URL of the attachment (can be a hosted file URL or a Data URL)
+- `name` (str): The name of the attachment, usually the file name (default: "attachment")
+- `content_type` (Optional[str]): A string indicating the media type (extracted from pathname extension by default)
+
+### ChatModelConfig
+
+Configuration for chat models.
+
+**Attributes:**
+- `max_tokens` (Optional[int]): Maximum number of tokens
+- `temperature` (Optional[float]): Temperature for the model (randomness)
+- `top_p` (Optional[float]): Restriction on the cumulative probability of prediction candidates
+- `top_k` (Optional[int]): Number of top prediction candidates to consider
+- `frequency_penalty` (Optional[float]): Penalty for tokens which appear frequently
+- `presence_penalty` (Optional[float]): Penalty for tokens which already appeared at least once
+
+## Usage Example
+
+```python
+import marimo as mo
+
+# Create a chat message
+message = mo.ai.ChatMessage(
+    role="user",
+    content="Hello, how can I help you?",
+    id="msg-1"
+)
+
+# Create an attachment
+attachment = mo.ai.ChatAttachment(
+    url="https://example.com/image.png",
+    name="example.png"
+)
+
+# Configure a model
+config = mo.ai.ChatModelConfig(
+    max_tokens=1000,
+    temperature=0.7
+)
+```

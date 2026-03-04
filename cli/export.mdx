@@ -1,0 +1,358 @@
+---
+title: 'marimo export'
+description: 'Export marimo notebooks to various formats including HTML, PDF, scripts, and more'
+---
+
+# marimo export
+
+Export marimo notebooks to various formats for sharing, deployment, or integration with other tools.
+
+## Usage
+
+```bash
+marimo export <FORMAT> NOTEBOOK [OPTIONS]
+```
+
+## Export Formats
+
+- **html** - Interactive HTML with outputs
+- **html-wasm** - Standalone WASM-powered HTML (runs Python in browser)
+- **pdf** - PDF document or slides
+- **script** - Flat Python script
+- **md** - Markdown with code fences
+- **ipynb** - Jupyter notebook
+- **thumbnail** - Generate notebook thumbnail
+- **session** - Export notebook session data
+
+---
+
+## marimo export html
+
+Export a notebook as an interactive HTML file with outputs.
+
+### Usage
+
+```bash
+marimo export html NOTEBOOK [OPTIONS] [-- ARGS...]
+```
+
+### Options
+
+**--include-code / --no-include-code** - Include notebook code in HTML
+- Type: Flag
+- Default: `True`
+
+**-o, --output PATH** - Output HTML file path
+- If not provided, HTML is printed to stdout
+
+**--watch / --no-watch** - Watch for changes and regenerate
+- Default: `False`
+- Uses watchdog if available, otherwise polls every 1s
+
+**--sandbox / --no-sandbox** - Run in isolated virtual environment
+- Requires `uv`
+
+**-f, --force** - Force overwrite of output file
+- Default: `False`
+
+### Examples
+
+```bash
+# Export to HTML
+marimo export html notebook.py -o notebook.html
+
+# Export without code
+marimo export html notebook.py -o notebook.html --no-include-code
+
+# Watch for changes
+marimo export html notebook.py -o notebook.html --watch
+
+# Pass arguments to notebook
+marimo export html app.py -o app.html -- --config prod.json
+```
+
+---
+
+## marimo export html-wasm
+
+Export as a standalone WASM-powered HTML file that runs Python in the browser.
+
+### Usage
+
+```bash
+marimo export html-wasm NOTEBOOK [OPTIONS]
+```
+
+### Options
+
+**-o, --output PATH** - Output directory or HTML file (required)
+
+**--mode MODE** - Notebook mode (required)
+- Choices: `edit`, `run`
+- `edit`: Code is editable in browser
+- `run`: Code is read-only
+
+**--show-code / --no-show-code** - Show code by default (run mode only)
+- Default: `False`
+
+**--watch / --no-watch** - Watch for changes
+- Default: `False`
+
+**--include-cloudflare / --no-include-cloudflare** - Include Cloudflare Worker config
+- Default: `False`
+- Generates `index.js` and `wrangler.jsonc` for easy deployment
+
+**--sandbox / --no-sandbox** - Run in isolated environment
+
+**-f, --force** - Force overwrite
+
+### Examples
+
+```bash
+# Export as editable WASM notebook
+marimo export html-wasm notebook.py -o output/ --mode edit
+
+# Export as read-only app
+marimo export html-wasm app.py -o app.html --mode run
+
+# Include Cloudflare deployment files
+marimo export html-wasm app.py -o dist/ --mode run --include-cloudflare
+
+# Serve the exported notebook
+marimo export html-wasm app.py -o dist/ --mode run
+python -m http.server --directory dist
+```
+
+### Notes
+
+- Uses Pyodide to run Python in the browser
+- Must be served over HTTP (not `file://`)
+- Not all Python packages are supported by Pyodide
+- Creates `.nojekyll` file for GitHub Pages compatibility
+
+---
+
+## marimo export pdf
+
+Export a notebook as a PDF document or slides.
+
+### Usage
+
+```bash
+marimo export pdf NOTEBOOK [OPTIONS] [-- ARGS...]
+```
+
+### Options
+
+**-o, --output PATH** - Output PDF file (required)
+
+**--include-outputs / --no-include-outputs** - Run and include outputs
+- Default: `True`
+
+**--include-inputs / --no-include-inputs** - Include code cells
+- Default: `True`
+
+**--webpdf / --no-webpdf** - Use WebPDF exporter (Chromium)
+- Default: `True`
+- If disabled, tries standard PDF (pandoc + TeX) first, falls back to WebPDF
+
+**--rasterize-outputs / --no-rasterize-outputs** - Rasterize HTML/Vega outputs to PNG
+- Default: `True`
+- Converts interactive widgets to static images
+
+**--raster-scale SCALE** - Scale factor for rasterized outputs
+- Type: Float (1.0-4.0)
+- Default: `4.0`
+
+**--raster-server MODE** - Server mode for raster capture
+- Choices: `static`, `live`
+- Default: `static`
+- Use `live` for outputs requiring Python connection
+
+**--as FORMAT** - PDF export preset
+- Choices: `document`, `slides`
+- `slides`: Export as reveal.js slides
+- Auto-detected if notebook uses slides layout
+
+**--watch / --no-watch** - Watch for changes
+
+**--sandbox / --no-sandbox** - Run in isolated environment
+
+**-f, --force** - Force overwrite
+
+### Dependencies
+
+Requires: `nbformat`, `nbconvert`, `nbconvert[webpdf]`
+
+For rasterization: `playwright`
+
+```bash
+pip install nbformat nbconvert nbconvert[webpdf] playwright
+playwright install chromium
+```
+
+### Examples
+
+```bash
+# Export to PDF
+marimo export pdf notebook.py -o notebook.pdf
+
+# Export as slides
+marimo export pdf presentation.py -o slides.pdf --as=slides
+
+# Export without running (code only)
+marimo export pdf notebook.py -o notebook.pdf --no-include-outputs
+
+# High-quality rasterization
+marimo export pdf app.py -o app.pdf --raster-scale 4.0 --raster-server live
+
+# Watch for changes
+marimo export pdf report.py -o report.pdf --watch
+```
+
+---
+
+## marimo export script
+
+Export as a flat Python script in topological order.
+
+### Usage
+
+```bash
+marimo export script NOTEBOOK [OPTIONS]
+```
+
+### Options
+
+**-o, --output PATH** - Output script file
+- If not provided, script is printed to stdout
+
+**--watch / --no-watch** - Watch for changes
+
+**--sandbox / --no-sandbox** - Run in isolated environment
+
+**-f, --force** - Force overwrite
+
+### Examples
+
+```bash
+# Export to script
+marimo export script notebook.py -o script.py
+
+# Print to stdout
+marimo export script notebook.py
+
+# Watch for changes
+marimo export script notebook.py -o script.py --watch
+```
+
+---
+
+## marimo export md
+
+Export as a code-fenced Markdown file.
+
+### Usage
+
+```bash
+marimo export md NOTEBOOK [OPTIONS]
+```
+
+### Options
+
+**-o, --output PATH** - Output Markdown file
+
+**--watch / --no-watch** - Watch for changes
+
+**--sandbox / --no-sandbox** - Run in isolated environment
+
+**-f, --force** - Force overwrite
+
+### Examples
+
+```bash
+# Export to Markdown
+marimo export md notebook.py -o notebook.md
+
+# Watch for changes
+marimo export md notebook.py -o notebook.md --watch
+```
+
+---
+
+## marimo export ipynb
+
+Export as a Jupyter notebook.
+
+### Usage
+
+```bash
+marimo export ipynb NOTEBOOK [OPTIONS]
+```
+
+### Options
+
+**-o, --output PATH** - Output .ipynb file
+
+**--sort MODE** - Cell sort order
+- Choices: `top-down`, `topological`
+- Default: `topological`
+
+**--include-outputs / --no-include-outputs** - Run and include outputs
+- Default: `False`
+
+**--watch / --no-watch** - Watch for changes
+
+**--sandbox / --no-sandbox** - Run in isolated environment
+
+**-f, --force** - Force overwrite
+
+### Dependencies
+
+Requires: `nbformat`
+
+```bash
+pip install nbformat
+```
+
+### Examples
+
+```bash
+# Export to Jupyter notebook
+marimo export ipynb notebook.py -o notebook.ipynb
+
+# Include outputs
+marimo export ipynb notebook.py -o notebook.ipynb --include-outputs
+
+# Sort top-down instead of topological
+marimo export ipynb notebook.py -o notebook.ipynb --sort top-down
+```
+
+---
+
+## Common Options
+
+These options are available for most export commands:
+
+**--watch / --no-watch** - Watch the notebook for changes and regenerate output
+- Uses `watchdog` if installed, otherwise polls every 1 second
+- Requires `--output` to be specified
+
+**--sandbox / --no-sandbox** - Run in an isolated virtual environment using `uv run --isolated`
+- Requires `uv` to be installed
+- Useful for ensuring reproducible exports
+
+**-f, --force** - Force overwrite of the output file without prompting
+
+## Tips
+
+- Use `--watch` during development for live previews
+- For production HTML exports, consider `html-wasm` for fully self-contained apps
+- PDF exports work best with `--as=slides` for presentation notebooks
+- Use `--sandbox` for reproducible exports with isolated dependencies
+- Combine `--force` with `--watch` to avoid prompts
+
+## Related Commands
+
+- [marimo run](/cli/run) - Run notebooks as apps
+- [marimo convert](/cli/convert) - Convert notebooks from other formats

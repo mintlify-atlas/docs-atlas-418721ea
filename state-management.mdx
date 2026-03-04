@@ -1,0 +1,275 @@
+---
+title: State Management
+description: Advanced state management with marimo.state() for reactive programming patterns
+---
+
+# State Management
+
+marimo provides `mo.state()` for managing mutable reactive state in your notebooks. While marimo's built-in reactivity handles most use cases, `state()` enables advanced patterns like synchronized UI elements and side effects.
+
+<Warning>
+  Reactive state is an advanced feature that can introduce cycles and hard-to-debug execution paths. **In almost all cases, you should prefer using marimo's built-in [reactive execution](https://docs.marimo.io/guides/reactivity) and [interactivity](https://docs.marimo.io/guides/interactivity).**
+</Warning>
+
+## Understanding marimo.state()
+
+The `mo.state()` function creates mutable reactive state that triggers automatic re-execution of dependent cells when updated.
+
+### Basic Usage
+
+```python
+import marimo as mo
+
+# Create state with initial value
+get_count, set_count = mo.state(0)
+```
+
+This returns:
+- **Getter function**: Reads the current state value
+- **Setter function**: Updates the state value and triggers reactivity
+
+### Reading State
+
+```python
+# In another cell
+current_value = get_count()
+mo.md(f"Count: {current_value}")
+```
+
+### Updating State
+
+<CodeGroup>
+
+```python Direct value
+# Set to a specific value
+set_count(42)
+```
+
+```python Functional update
+# Update based on current value
+set_count(lambda value: value + 1)
+```
+
+</CodeGroup>
+
+## Reactivity Behavior
+
+When you call a state setter:
+
+1. The state value is updated
+2. All **other** cells that reference the getter are automatically re-run
+3. By default, the cell that called the setter is **not** re-run (preventing infinite loops)
+
+### Self-Loops
+
+To allow a cell to re-run itself when calling the setter:
+
+```python
+get_state, set_state = mo.state(0, allow_self_loops=True)
+
+# This cell will re-run until x reaches 3
+x = get_state()
+if x < 3:
+    set_state(x + 1)
+```
+
+<Warning>
+  Use `allow_self_loops=True` carefully - ensure your logic has a termination condition to prevent infinite loops.
+</Warning>
+
+## Common Use Cases
+
+### Synchronizing Multiple UI Elements
+
+Bind multiple UI elements to shared state so they stay synchronized:
+
+```python
+# Cell 1: Create shared state
+get_value, set_value = mo.state(50)
+```
+
+```python
+# Cell 2: Create slider bound to state
+slider = mo.ui.slider(
+    0, 100,
+    value=get_value(),
+    on_change=set_value
+)
+slider
+```
+
+```python
+# Cell 3: Create number input bound to same state
+number = mo.ui.number(
+    0, 100,
+    value=get_value(),
+    on_change=set_value
+)
+number
+```
+
+<Note>
+  When either element is updated, both will reflect the new value automatically.
+</Note>
+
+### Tracking User Interactions
+
+```python
+# Track click count
+get_clicks, set_clicks = mo.state(0)
+
+button = mo.ui.button(
+    label="Click me",
+    on_click=lambda _: set_clicks(lambda n: n + 1)
+)
+
+mo.md(f"Clicked {get_clicks()} times")
+```
+
+### Building State Machines
+
+```python
+get_status, set_status = mo.state("idle")
+
+# Different actions based on current state
+if get_status() == "idle":
+    start_btn = mo.ui.button(
+        "Start",
+        on_click=lambda _: set_status("running")
+    )
+elif get_status() == "running":
+    stop_btn = mo.ui.button(
+        "Stop",
+        on_click=lambda _: set_status("idle")
+    )
+```
+
+## Implementation Details
+
+### State Registry
+
+marimo maintains a state registry that tracks all state instances in your notebook. From `marimo/_runtime/state.py`:
+
+```python
+class StateRegistry:
+    def __init__(self) -> None:
+        # variable name -> state
+        self._states: dict[str, StateItem[Any]] = {}
+        # id -> variable name for state
+        self._inv_states: dict[Id, set[str]] = {}
+```
+
+The registry:
+- Uses weak references to avoid memory leaks
+- Prunes inactive states when cells are deleted
+- Maintains bidirectional mappings for efficient lookups
+
+### SetFunctor
+
+The setter is implemented as a typed functor that handles both direct values and functional updates:
+
+```python
+class SetFunctor(Generic[T]):
+    def __call__(self, update: T | Callable[[T], T]) -> None:
+        self._state._value = (
+            update(self._state._value)
+            if isinstance(update, (types.MethodType, types.FunctionType))
+            else update
+        )
+        ctx.register_state_update(self._state)
+```
+
+## Best Practices
+
+<Accordion title="Do: Use for UI synchronization">
+  State is ideal for keeping multiple UI elements in sync or managing UI-driven side effects.
+</Accordion>
+
+<Accordion title="Don't: Store UI elements in state">
+  Never store `marimo.ui` elements in state - this can cause hard-to-diagnose bugs and breaks reactivity.
+  
+  ```python
+  # ❌ Don't do this
+  get_widget, set_widget = mo.state(mo.ui.slider(0, 10))
+  
+  # ✓ Do this instead
+  get_value, set_value = mo.state(5)
+  widget = mo.ui.slider(0, 10, value=get_value())
+  ```
+</Accordion>
+
+<Accordion title="Do: Prefer built-in reactivity">
+  For most cases, marimo's automatic reactivity is sufficient:
+  
+  ```python
+  # Usually this is all you need
+  slider = mo.ui.slider(0, 100)
+  
+  # In another cell, this automatically updates when slider changes
+  result = slider.value * 2
+  ```
+</Accordion>
+
+<Accordion title="Don't: Mutate state directly">
+  Always use the setter function - never mutate the state value directly.
+  
+  ```python
+  # ❌ Don't do this
+  get_list, set_list = mo.state([1, 2, 3])
+  get_list().append(4)  # Bad!
+  
+  # ✓ Do this instead
+  set_list(lambda lst: lst + [4])
+  ```
+</Accordion>
+
+## Testing State
+
+From the test suite (`tests/_runtime/test_state.py`):
+
+```python
+import marimo as mo
+
+# Test basic state update
+state, set_state = mo.state(0)
+assert state() == 0
+
+set_state(1)
+assert state() == 1
+
+# Test functional update
+set_state(lambda v: v + 1)
+assert state() == 2
+
+# Test with callable objects (not functions)
+class Counter:
+    called = False
+    def __call__(self):
+        self.called = True
+
+counter = Counter()
+set_state(counter)  # Sets state to counter instance
+assert state() == counter
+assert not counter.called  # Not called as a function
+```
+
+## When to Use State
+
+Use `mo.state()` when:
+
+- Synchronizing multiple UI elements to the same value
+- Implementing complex UI interaction patterns
+- Building state machines or multi-step workflows
+- Triggering side effects from UI interactions
+
+**Don't use `mo.state()` when:**
+
+- Simple variable assignment works (use marimo's built-in reactivity)
+- You're just reading UI element values (use `.value` directly)
+- You need to store computation results (use regular variables)
+
+## Related APIs
+
+- [Reactivity](https://docs.marimo.io/guides/reactivity) - Understanding marimo's reactive execution
+- [Interactivity](https://docs.marimo.io/guides/interactivity) - Working with UI elements
+- [UI Elements](https://docs.marimo.io/api/inputs/) - Available interactive components

@@ -1,0 +1,468 @@
+---
+title: Interactive Elements
+description: Build interactive notebooks with marimo's rich library of UI elements including sliders, buttons, dropdowns, tables, and more.
+---
+
+# Interactive Elements
+
+marimo provides a comprehensive library of interactive UI elements through `mo.ui`. These elements automatically trigger reactive execution when their values change, making it easy to build interactive data applications.
+
+<Note>
+  All UI elements in marimo are reactive. When you interact with a UI element, any cells that reference it automatically re-run with the new value.
+</Note>
+
+## Available UI Elements
+
+marimo offers a wide variety of UI elements for different use cases:
+
+<CardGroup cols={2}>
+  <Card title="Input Elements" icon="keyboard">
+    Text, number, textarea, code editor
+  </Card>
+  <Card title="Selection Elements" icon="hand-pointer">
+    Slider, dropdown, radio, multiselect, checkbox
+  </Card>
+  <Card title="Data Elements" icon="table">
+    Table, dataframe, data editor, data explorer
+  </Card>
+  <Card title="Advanced Elements" icon="wand-magic-sparkles">
+    File upload, date picker, chat, microphone
+  </Card>
+</CardGroup>
+
+## Basic Input Elements
+
+### Slider
+
+Create numeric sliders for selecting values from a range:
+
+```python
+import marimo as mo
+
+# Basic slider
+slider = mo.ui.slider(start=1, stop=10, step=1)
+slider
+```
+
+```python
+# Use the slider's value
+mo.md(f"Selected value: **{slider.value}**")
+```
+
+<Accordion title="Slider with custom steps">
+  You can also create sliders with custom discrete steps:
+  
+  ```python
+  slider = mo.ui.slider(
+      steps=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
+      label="Custom steps"
+  )
+  ```
+</Accordion>
+
+### Number Input
+
+A number picker over an interval:
+
+```python
+number = mo.ui.number(start=1, stop=10, step=2)
+number
+```
+
+```python
+# Or for integer-only values
+number = mo.ui.number(step=1)
+```
+
+### Text Input
+
+Collect text input from users:
+
+```python
+text_input = mo.ui.text(label="Enter your name")
+text_input
+```
+
+```python
+mo.md(f"Hello, {text_input.value}!")
+```
+
+### Text Area
+
+For multi-line text input:
+
+```python
+text_area = mo.ui.text_area(
+    label="Enter your thoughts",
+    placeholder="Type here..."
+)
+text_area
+```
+
+## Selection Elements
+
+### Dropdown
+
+Create dropdown menus for selecting from a list of options:
+
+```python
+dropdown = mo.ui.dropdown(
+    options=["Python", "JavaScript", "Rust", "Go"],
+    label="Choose a language"
+)
+dropdown
+```
+
+```python
+mo.md(f"You selected: **{dropdown.value}**")
+```
+
+### Radio Buttons
+
+Radio buttons for mutually exclusive choices:
+
+```python
+radio = mo.ui.radio(
+    options=["Option A", "Option B", "Option C"],
+    value="Option A"
+)
+radio
+```
+
+### Multiselect
+
+Allow users to select multiple options:
+
+```python
+multiselect = mo.ui.multiselect(
+    options=["apple", "banana", "cherry", "date"],
+    label="Select fruits"
+)
+multiselect
+```
+
+```python
+mo.md(f"Selected fruits: {', '.join(multiselect.value)}")
+```
+
+### Checkbox
+
+Simple boolean input:
+
+```python
+checkbox = mo.ui.checkbox(label="I agree to the terms")
+checkbox
+```
+
+## Data Elements
+
+### Table
+
+Display interactive tables with built-in filtering, sorting, and pagination:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [25, 30, 35],
+    "city": ["NYC", "SF", "LA"]
+})
+
+table = mo.ui.table(df, selection="multi")
+table
+```
+
+```python
+# Access selected rows
+selected_data = table.value
+mo.md(f"Selected {len(selected_data)} rows")
+```
+
+<Tip>
+  The table element supports selection modes: `"single"`, `"multi"`, or `None` for no selection.
+</Tip>
+
+### DataFrame
+
+Interactive dataframe viewer with transformations:
+
+```python
+dataframe = mo.ui.dataframe(df)
+dataframe
+```
+
+```python
+# Get the transformed dataframe
+transformed = dataframe.value
+```
+
+### Data Editor
+
+Edit data directly in the UI:
+
+```python
+editor = mo.ui.data_editor(df)
+editor
+```
+
+```python
+# Access edited data
+edited_df = editor.value
+```
+
+### Data Explorer
+
+Powerful data exploration interface:
+
+```python
+explorer = mo.ui.data_explorer(df)
+explorer
+```
+
+## Advanced Elements
+
+### Button
+
+Create clickable buttons:
+
+```python
+button = mo.ui.button(label="Click me!")
+button
+```
+
+```python
+mo.md(f"Button clicked {button.value} times")
+```
+
+### Run Button
+
+A special button that prevents automatic execution:
+
+```python
+run_button = mo.ui.run_button(label="Run expensive computation")
+run_button
+```
+
+<Warning>
+  Use `run_button` for expensive operations. Cells referencing it only run when the button is clicked, not automatically.
+</Warning>
+
+### File Upload
+
+Upload files from the user's computer:
+
+```python
+file_upload = mo.ui.file(
+    filetypes=[".csv", ".json"],
+    multiple=True
+)
+file_upload
+```
+
+```python
+if file_upload.value:
+    for file in file_upload.value:
+        mo.md(f"Uploaded: {file.name}")
+```
+
+### Date Picker
+
+Select dates and times:
+
+```python
+date_picker = mo.ui.date(label="Select a date")
+date_picker
+```
+
+```python
+datetime_picker = mo.ui.datetime(label="Select date and time")
+datetime_picker
+```
+
+```python
+date_range_picker = mo.ui.date_range(label="Select date range")
+date_range_picker
+```
+
+### Chat
+
+Build chat interfaces:
+
+```python
+chat = mo.ui.chat(
+    mo.ai.ChatModelConfig(
+        model="gpt-4",
+        system_message="You are a helpful assistant."
+    )
+)
+chat
+```
+
+### Microphone
+
+Record audio input:
+
+```python
+mic = mo.ui.microphone()
+mic
+```
+
+## Binding UI Elements
+
+### Simple Binding
+
+The most common pattern is to assign a UI element to a variable and reference it in other cells:
+
+```python
+# Cell 1: Create the UI element
+x = mo.ui.slider(1, 9)
+x
+```
+
+```python
+# Cell 2: Use the value
+import math
+mo.md(f"$e^{x.value} = {math.exp(x.value):0.3f}$")
+```
+
+### Forms
+
+Prevent updates until a submit button is clicked:
+
+```python
+form = mo.ui.slider(1, 9).form()
+form
+```
+
+```python
+mo.md(f"The last submitted value is **{form.value}**")
+```
+
+<Accordion title="Why use forms?">
+  Forms are useful when you have multiple related inputs and want to batch their updates. Without a form, each slider change would trigger re-execution. With a form, changes only apply when submitted.
+</Accordion>
+
+### Batch
+
+Group multiple UI elements together:
+
+```python
+inputs = mo.ui.batch(
+    name=mo.ui.text(label="Name"),
+    age=mo.ui.number(start=0, stop=120, label="Age"),
+    city=mo.ui.dropdown(
+        options=["NYC", "SF", "LA"],
+        label="City"
+    )
+).form()
+
+inputs
+```
+
+```python
+mo.md(f"""
+**Profile:**
+- Name: {inputs.value['name']}
+- Age: {inputs.value['age']}
+- City: {inputs.value['city']}
+""")
+```
+
+### Dictionary
+
+Create dictionaries of UI elements:
+
+```python
+ui_dict = mo.ui.dictionary({
+    "x": mo.ui.slider(1, 10),
+    "y": mo.ui.slider(1, 10)
+})
+ui_dict
+```
+
+```python
+mo.md(f"x={ui_dict.value['x']}, y={ui_dict.value['y']}")
+```
+
+### Array
+
+Create arrays of UI elements:
+
+```python
+ui_array = mo.ui.array([mo.ui.text() for _ in range(3)])
+ui_array
+```
+
+## Interactive Charts
+
+### Altair Charts
+
+Make Altair charts interactive:
+
+```python
+import altair as alt
+
+chart = mo.ui.altair_chart(
+    alt.Chart(df).mark_point().encode(
+        x="x",
+        y="y"
+    )
+)
+chart
+```
+
+```python
+# Access selected points
+selected_points = chart.value
+```
+
+### Plotly Charts
+
+Make Plotly charts interactive:
+
+```python
+import plotly.graph_objects as go
+
+fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 5, 6])])
+plotly_chart = mo.ui.plotly(fig)
+plotly_chart
+```
+
+### Matplotlib
+
+Add interactivity to matplotlib plots:
+
+```python
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.plot([1, 2, 3], [4, 5, 6])
+
+mpl_chart = mo.ui.matplotlib(fig)
+mpl_chart
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Keep UI in separate cells">
+    Create UI elements in their own cells for better organization and reactivity.
+  </Step>
+  
+  <Step title="Use meaningful variable names">
+    Choose descriptive names for UI elements to make your notebook more readable.
+  </Step>
+  
+  <Step title="Use forms for expensive operations">
+    Wrap UI elements in forms when changes trigger expensive computations.
+  </Step>
+  
+  <Step title="Leverage batch and dictionary">
+    Group related UI elements using `batch()` or `dictionary()` for cleaner code.
+  </Step>
+</Steps>
+
+<Tip>
+  All UI elements support common parameters like `label`, `on_change`, `disabled`, and `full_width` for consistent styling and behavior.
+</Tip>

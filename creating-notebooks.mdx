@@ -1,0 +1,270 @@
+---
+title: Creating Notebooks
+description: Learn how to create and structure marimo notebooks
+---
+
+marimo notebooks are reactive Python programs stored as `.py` files. This makes them easy to version control, diff, and integrate into your development workflow.
+
+## Creating a New Notebook
+
+<Steps>
+  <Step title="Start the editor">
+    Create a new notebook with the `marimo edit` command:
+
+    <CodeGroup>
+    ```bash Interactive mode
+    marimo edit
+    ```
+
+    ```bash Named notebook
+    marimo edit notebook.py
+    ```
+
+    ```bash From a prompt
+    marimo new "Create a data visualization with plotly"
+    ```
+    </CodeGroup>
+
+    If the file doesn't exist, marimo will create an empty notebook. If it exists, marimo will open it for editing.
+  </Step>
+
+  <Step title="Open in browser">
+    marimo will automatically launch your browser and open the notebook editor at `http://localhost:2718`.
+
+    Use the `--headless` flag to prevent the browser from opening:
+
+    ```bash
+    marimo edit notebook.py --headless
+    ```
+  </Step>
+
+  <Step title="Add cells">
+    Click the `+` button or press `Ctrl/Cmd + K` to add a new cell. Each cell can contain Python code that will execute reactively.
+  </Step>
+</Steps>
+
+## Notebook File Structure
+
+marimo notebooks are pure Python files with a specific structure:
+
+```python notebook.py
+import marimo
+
+__generated_with = "0.19.7"
+app = marimo.App(width="medium")
+
+
+@app.cell
+def __():
+    import marimo as mo
+    import pandas as pd
+    return mo, pd
+
+
+@app.cell
+def __(mo):
+    mo.md("# Hello, marimo!")
+    return
+
+
+@app.cell
+def __(pd):
+    data = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    return (data,)
+
+
+if __name__ == "__main__":
+    app.run()
+```
+
+<Note>
+Each cell is a Python function decorated with `@app.cell`. Variables are automatically tracked and cells re-execute when their dependencies change.
+</Note>
+
+## Understanding Cells
+
+### Cell Functions
+
+Each cell is defined as a function:
+
+```python
+@app.cell
+def __():
+    x = 1
+    y = 2
+    return x, y
+```
+
+The function parameters (like `__(mo, pd)`) indicate which variables from other cells this cell depends on.
+
+### Variable Returns
+
+Variables must be explicitly returned to be used by other cells:
+
+```python
+@app.cell
+def __():
+    data = [1, 2, 3]
+    result = sum(data)
+    return data, result  # Both available to other cells
+```
+
+<Warning>
+Variables not included in the return statement are local to the cell and won't be accessible elsewhere.
+</Warning>
+
+### Anonymous Cells
+
+Cells use `__()` as the function name by default. You can also name cells for better debugging:
+
+```python
+@app.cell
+def load_data():
+    import pandas as pd
+    df = pd.read_csv("data.csv")
+    return df, pd
+```
+
+## Organizing Code
+
+### Markdown Cells
+
+Use `mo.md()` to create formatted markdown content:
+
+```python
+@app.cell
+def __(mo):
+    mo.md(
+        r"""
+        # Data Analysis
+
+        This notebook analyzes **sales data** from Q4 2024.
+
+        Key metrics:
+        - Revenue
+        - Customer acquisition
+        - Retention rates
+        """
+    )
+    return
+```
+
+### Code Organization
+
+Follow these best practices:
+
+1. **Import cells first**: Place imports at the top
+2. **One responsibility per cell**: Keep cells focused on a single task
+3. **Return only what's needed**: Don't expose internal variables
+4. **Use descriptive names**: Name important cells for clarity
+
+<CodeGroup>
+```python Good - Focused cells
+@app.cell
+def __():
+    import pandas as pd
+    import numpy as np
+    return pd, np
+
+@app.cell
+def __(pd):
+    df = pd.read_csv("data.csv")
+    return (df,)
+
+@app.cell
+def __(df):
+    summary = df.describe()
+    return (summary,)
+```
+
+```python Avoid - Doing too much
+@app.cell
+def __():
+    import pandas as pd
+    df = pd.read_csv("data.csv")
+    summary = df.describe()
+    plot = df.plot()
+    # Too many unrelated operations
+    return df, summary, plot
+```
+</CodeGroup>
+
+## Cell Configuration
+
+### Hide Code
+
+Hide cell code while showing output:
+
+```python
+@app.cell(hide_code=True)
+def __(mo):
+    mo.md("# Welcome to My Analysis")
+    return
+```
+
+### Disable Automatic Execution
+
+Prevent a cell from running automatically:
+
+```python
+@app.cell(disabled=True)
+def __():
+    # Expensive computation - run manually
+    result = expensive_operation()
+    return (result,)
+```
+
+## Advanced: Script Metadata (PEP 723)
+
+marimo notebooks can include dependency information using PEP 723 inline script metadata:
+
+```python
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "marimo",
+#     "pandas>=2.0.0",
+#     "plotly",
+# ]
+# ///
+
+import marimo
+
+app = marimo.App()
+# ...
+```
+
+<Tip>
+When you use `--sandbox` mode, marimo automatically manages these dependencies. See [Package Management](/package-management) for details.
+</Tip>
+
+## Creating from Templates
+
+### AI-Generated Notebooks
+
+Generate a notebook from a text prompt:
+
+```bash
+marimo new "Create an interactive dashboard with sliders to filter a pandas DataFrame"
+```
+
+### Tutorial Notebooks
+
+Open built-in tutorials:
+
+```bash
+marimo tutorial intro
+marimo tutorial dataflow
+marimo tutorial plots
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Running Notebooks" icon="play" href="/running-notebooks">
+    Learn about different execution modes
+  </Card>
+  <Card title="Package Management" icon="package" href="/package-management">
+    Manage dependencies in your notebooks
+  </Card>
+</CardGroup>

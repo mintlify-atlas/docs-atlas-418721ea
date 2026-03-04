@@ -1,0 +1,354 @@
+---
+title: Working with Expensive Notebooks
+description: Configure lazy execution and control automatic runs for notebooks with computationally expensive cells
+---
+
+# Working with Expensive Notebooks
+
+marimo's reactive execution automatically runs cells when their dependencies change. For notebooks with expensive computations, you can configure marimo to use **lazy execution mode**, which marks cells as stale instead of automatically running them.
+
+## Lazy Execution Mode
+
+Lazy execution gives you the benefits of reactive programming (tracking dependencies and detecting stale cells) while preventing accidental execution of expensive operations.
+
+### Configuring Lazy Mode
+
+<CodeGroup>
+
+```python Runtime configuration
+import marimo as mo
+
+# Configure at notebook level
+app = mo.App(
+    runtime={
+        "on_cell_change": "lazy"
+    }
+)
+```
+
+```toml Global configuration
+# In ~/.marimo.toml or pyproject.toml
+[tool.marimo.runtime]
+on_cell_change = "lazy"
+auto_instantiate = true
+```
+
+```python UI settings
+# Change via Settings panel in the marimo editor:
+# Settings → Runtime → On cell change → "lazy"
+```
+
+</CodeGroup>
+
+### Execution Modes
+
+marimo supports two execution modes:
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| `"autorun"` | Cells automatically run when dependencies change | Default, interactive exploration |
+| `"lazy"` | Cells are marked as stale, require manual execution | Expensive computations, ETL pipelines |
+
+## Runtime Configuration Options
+
+From `marimo/_config/config.py`:
+
+```python
+class RuntimeConfig(TypedDict):
+    # If False, cells won't run on startup (edit mode only)
+    auto_instantiate: bool
+    
+    # Module reload behavior: "off", "lazy", or "autorun"
+    auto_reload: Literal["off", "lazy", "autorun"]
+    
+    # Automatically run pytest on test cells
+    reactive_tests: bool
+    
+    # Cell execution mode: "lazy" or "autorun"
+    on_cell_change: OnCellChangeType
+    
+    # File watcher behavior: "lazy" or "autorun"
+    watcher_on_save: Literal["lazy", "autorun"]
+    
+    # Maximum size of cell outputs
+    output_max_bytes: int
+    std_stream_max_bytes: int
+```
+
+### Key Settings for Expensive Notebooks
+
+#### auto_instantiate
+
+Control whether cells run automatically when opening a notebook:
+
+```python
+app = mo.App(
+    runtime={
+        "auto_instantiate": False  # Don't run on startup
+    }
+)
+```
+
+<Note>
+  This only applies in edit mode. Apps always run automatically.
+</Note>
+
+#### on_cell_change
+
+Control how cells react to changes:
+
+```python
+app = mo.App(
+    runtime={
+        "on_cell_change": "lazy"  # Mark stale instead of auto-run
+    }
+)
+```
+
+#### auto_reload
+
+Control behavior when imported modules change:
+
+```python
+app = mo.App(
+    runtime={
+        "auto_reload": "lazy"  # Mark cells using modified modules as stale
+    }
+)
+```
+
+## Controlling Cell Execution
+
+### Stale Cell Indicators
+
+In lazy mode, marimo marks cells as stale with visual indicators:
+
+- **Yellow dot**: Cell's dependencies have changed
+- **Run button**: Click to execute stale cells
+- **Run All Stale**: Batch execute all stale cells
+
+### Manual Execution Strategies
+
+<Accordion title="Run individual cells as needed">
+  Click the run button on specific stale cells when you need their results:
+  
+  ```python
+  # Expensive data loading
+  df = load_large_dataset()  # Won't auto-run in lazy mode
+  ```
+</Accordion>
+
+<Accordion title="Run All Stale Cells">
+  Use the "Run All Stale" button to execute all stale cells in dependency order:
+  
+  - Keyboard shortcut: `Cmd/Ctrl + Shift + Enter`
+  - Menu: Runtime → Run stale cells
+</Accordion>
+
+<Accordion title="Disable cells temporarily">
+  Disable expensive cells to prevent them from running:
+  
+  ```python
+  # Right-click cell → Disable cell
+  # Or use keyboard shortcut: Cmd/Ctrl + D
+  
+  # Disabled cells won't run and their outputs are hidden
+  expensive_computation()
+  ```
+</Accordion>
+
+## Performance Optimization Strategies
+
+### 1. Caching Expensive Computations
+
+```python
+import functools
+
+@functools.lru_cache(maxsize=128)
+def expensive_function(param):
+    # Heavy computation
+    return result
+
+# Or use marimo's caching
+import marimo as mo
+
+with mo.cache:
+    result = expensive_computation()
+```
+
+### 2. Lazy Data Loading
+
+```python
+# Load data only when needed
+def get_data():
+    if not hasattr(get_data, '_cache'):
+        get_data._cache = load_large_dataset()
+    return get_data._cache
+
+df = get_data()
+```
+
+### 3. Incremental Processing
+
+```python
+# Process data in chunks
+import duckdb
+
+# Use lazy evaluation with DuckDB or Polars
+query = duckdb.sql("""
+    SELECT * FROM large_table
+    WHERE condition
+""")
+
+# Only materialized when needed
+result = query.df()  # Convert to pandas when ready
+```
+
+### 4. Conditional Execution
+
+```python
+import marimo as mo
+
+# Use mo.stop to halt execution conditionally
+if not run_expensive_cell:
+    mo.stop()
+
+result = expensive_operation()
+```
+
+## Output Size Management
+
+Limit output sizes to prevent frontend performance issues:
+
+```python
+app = mo.App(
+    runtime={
+        "output_max_bytes": 5_000_000,  # 5MB limit for cell outputs
+        "std_stream_max_bytes": 1_000_000  # 1MB for console output
+    }
+)
+```
+
+Large outputs are automatically truncated with a download link.
+
+## Execution Type: Strict vs Relaxed
+
+marimo offers two execution types for different memory management strategies:
+
+```python
+app = mo.App(
+    runtime={
+        "execution_type": "strict"  # or "relaxed"
+    }
+)
+```
+
+- **`relaxed`**: Faster, shares objects between cells (default)
+- **`strict`**: Clones cell outputs to prevent hidden state accumulation
+
+<Warning>
+  Use `"strict"` mode when working with mutable objects that could create unexpected side effects between cells.
+</Warning>
+
+## Working with Module Reloading
+
+When developing modules imported by your notebook:
+
+```python
+app = mo.App(
+    runtime={
+        "auto_reload": "lazy"
+    }
+)
+```
+
+Behavior:
+- `"off"`: Never reload modules
+- `"lazy"`: Mark cells importing modified modules as stale
+- `"autorun"`: Automatically re-run cells when modules change
+
+<Note>
+  marimo uses intelligent code analysis to track module dependencies, similar to IPython's `%autoreload` but with better integration.
+</Note>
+
+## Example: ETL Pipeline
+
+Complete example of configuring a notebook with expensive operations:
+
+```python
+import marimo as mo
+
+app = mo.App(
+    runtime={
+        "auto_instantiate": False,  # Don't run on open
+        "on_cell_change": "lazy",   # Manual execution
+        "auto_reload": "lazy",      # Track module changes
+        "output_max_bytes": 10_000_000
+    }
+)
+
+@app.cell
+def load_data():
+    # Won't run automatically
+    import duckdb
+    conn = duckdb.connect('large_database.db')
+    return conn,
+
+@app.cell
+def transform(conn):
+    # Only runs when explicitly executed
+    result = conn.sql("""
+        SELECT * FROM large_table
+        WHERE date >= '2024-01-01'
+    """).df()
+    return result,
+
+@app.cell
+def export(result):
+    # Stale until previous cell completes
+    result.to_parquet('output.parquet')
+    return mo.md("✓ Export complete")
+
+if __name__ == "__main__":
+    app.run()
+```
+
+## Best Practices
+
+<Accordion title="Use lazy mode for data pipelines">
+  ETL notebooks benefit from manual control over execution flow:
+  
+  ```python
+  # Extract → Transform → Load
+  # Run each stage manually after validation
+  ```
+</Accordion>
+
+<Accordion title="Combine with mo.stop()">
+  Add runtime controls for conditional execution:
+  
+  ```python
+  import marimo as mo
+  
+  run_experiment = mo.ui.checkbox(label="Run expensive experiment")
+  
+  if not run_experiment.value:
+      mo.stop()
+  
+  result = run_expensive_experiment()
+  ```
+</Accordion>
+
+<Accordion title="Profile before optimizing">
+  Use marimo's cell timing to identify bottlenecks:
+  
+  - Cell execution times shown in editor
+  - Focus optimization on slowest cells
+  - Consider caching for repeated computations
+</Accordion>
+
+## Related Configuration
+
+- [Configuration Guide](https://docs.marimo.io/guides/configuration/runtime_configuration.html) - Complete runtime configuration reference
+- [Reactivity](https://docs.marimo.io/guides/reactivity) - Understanding reactive execution
+- [mo.stop()](https://docs.marimo.io/api/control_flow/#stop) - Conditional cell execution

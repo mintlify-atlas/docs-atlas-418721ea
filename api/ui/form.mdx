@@ -1,0 +1,82 @@
+---
+title: 'Form'
+description: 'Group UI elements into a submittable form'
+---
+
+# mo.ui.form
+
+Wrap UI elements to create a form that only updates when submitted.
+
+## Overview
+
+Forms prevent UI elements from triggering reactivity on every change. Instead, values are only sent when the form is submitted.
+
+## Usage
+
+```python
+form = mo.ui.form(ui_element)
+```
+
+Or use the `form()` method on any UI element:
+
+```python
+ui_element.form()
+```
+
+## Examples
+
+```python
+import marimo as mo
+
+# Basic form
+name_form = mo.ui.text(placeholder="Enter name").form()
+name_form
+```
+
+```python
+# Form with multiple elements
+form = mo.md(
+    f"""
+    **User Registration**
+    
+    Name: {mo.ui.text(placeholder="Full name")}
+    Email: {mo.ui.text(kind="email")}
+    Age: {mo.ui.number(start=18, stop=120)}
+    """
+).batch().form()
+
+form
+```
+
+```python
+# Access submitted values
+if form.value:
+    mo.md(f"Submitted: {form.value}")
+```
+
+```python
+# Form with submit button label
+form = mo.ui.text().form(submit_button_label="Search")
+```
+
+## Form Behavior
+
+- Values don't update until form is submitted
+- Submit button appears automatically
+- Form can be submitted by clicking button or pressing Enter
+- `form.value` is `None` until first submission
+
+<Tip>
+Use forms to batch multiple input changes together, reducing unnecessary computation.
+</Tip>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Batch" icon="layer-group" href="/api/ui/batch">
+    Combine multiple UI elements
+  </Card>
+  <Card title="Interactive Elements" icon="hand-pointer" href="/interactive-elements">
+    Guide to UI elements
+  </Card>
+</CardGroup>

@@ -1,0 +1,371 @@
+---
+title: Running Notebooks
+description: Different ways to execute marimo notebooks - edit, run, and script modes
+---
+
+marimo provides multiple execution modes depending on your use case: interactive editing, read-only apps, or standalone scripts.
+
+## Execution Modes
+
+marimo has three primary modes:
+
+| Mode | Command | Use Case |
+|------|---------|----------|
+| **Edit** | `marimo edit` | Interactive development with live editing |
+| **Run** | `marimo run` | Share as read-only web app |
+| **Script** | `python notebook.py` | Execute as standard Python script |
+
+## Edit Mode
+
+Edit mode is the interactive development environment for creating and modifying notebooks.
+
+### Basic Usage
+
+<CodeGroup>
+```bash Create/edit a notebook
+marimo edit notebook.py
+```
+
+```bash Start without a file
+marimo edit
+```
+
+```bash Open a directory
+marimo edit ./notebooks
+```
+</CodeGroup>
+
+### Configuration Options
+
+<Accordion title="Server Configuration">
+  ```bash
+  # Custom port and host
+  marimo edit notebook.py --port 8080 --host 0.0.0.0
+
+  # Run behind a proxy
+  marimo edit notebook.py --proxy https://myapp.com
+
+  # Custom base URL
+  marimo edit notebook.py --base-url /notebooks
+  ```
+</Accordion>
+
+<Accordion title="File Watching">
+  Auto-reload when the file changes externally:
+
+  ```bash
+  marimo edit notebook.py --watch
+  ```
+
+  <Note>
+  Useful when editing the `.py` file in another editor while viewing in marimo.
+  </Note>
+</Accordion>
+
+<Accordion title="Headless Mode">
+  Start the server without opening a browser:
+
+  ```bash
+  marimo edit notebook.py --headless
+  ```
+</Accordion>
+
+### Session Management
+
+```bash
+# Auto-close inactive sessions after 120 seconds
+marimo edit notebook.py --session-ttl 120
+
+# Global timeout: shutdown server after N minutes of inactivity
+marimo edit notebook.py --timeout 30
+```
+
+## Run Mode
+
+Run mode serves notebooks as read-only web applications - perfect for sharing dashboards and reports.
+
+### Basic Usage
+
+<CodeGroup>
+```bash Single notebook
+marimo run notebook.py
+```
+
+```bash Multiple notebooks (gallery)
+marimo run notebook1.py notebook2.py notebook3.py
+```
+
+```bash Directory (gallery)
+marimo run ./notebooks
+```
+</CodeGroup>
+
+### Configuration Options
+
+```bash
+# Include source code in the app
+marimo run notebook.py --include-code
+
+# Watch for changes and auto-reload
+marimo run notebook.py --watch
+
+# Custom port and host
+marimo run notebook.py --port 8080 --host 0.0.0.0
+
+# Session timeout (default: 120 seconds)
+marimo run notebook.py --session-ttl 300
+```
+
+### Passing Arguments to Notebooks
+
+Pass command-line arguments to your notebook:
+
+```bash
+marimo run notebook.py -- --data-file input.csv --threshold 0.95
+```
+
+Access these in your notebook:
+
+```python
+@app.cell
+def __():
+    import marimo as mo
+    args = mo.cli_args()
+    data_file = args.get("data_file")  # "input.csv"
+    threshold = float(args.get("threshold", 0.9))  # 0.95
+    return args, data_file, threshold
+```
+
+<Tip>
+Arguments are automatically parsed into a dictionary. Use `--arg-name value` format.
+</Tip>
+
+### Gallery Mode
+
+When running multiple notebooks or a directory, marimo creates a gallery view:
+
+```bash
+# Run all notebooks in a folder
+marimo run ./my-notebooks
+
+# Run specific notebooks
+marimo run analysis.py dashboard.py report.py
+```
+
+Users can browse and switch between notebooks in the web interface.
+
+## Script Mode
+
+Run notebooks as standalone Python scripts - no web server required.
+
+### Running as a Script
+
+```bash
+python notebook.py
+```
+
+Or make it executable:
+
+```bash
+chmod +x notebook.py
+./notebook.py
+```
+
+### Script Behavior
+
+- Executes all cells in dependency order
+- Outputs printed to terminal
+- No web interface
+- Exits when complete
+
+```python notebook.py
+import marimo
+
+app = marimo.App()
+
+@app.cell
+def __():
+    print("This runs as a script!")
+    result = 42
+    return (result,)
+
+@app.cell
+def __(result):
+    print(f"Result: {result}")
+    return
+
+if __name__ == "__main__":
+    app.run()
+```
+
+## Sandbox Mode
+
+Run notebooks in isolated virtual environments with automatic dependency management.
+
+### Single-File Sandbox
+
+```bash
+# Auto-creates venv from PEP 723 metadata
+marimo edit notebook.py --sandbox
+
+# Also works with run mode
+marimo run notebook.py --sandbox
+```
+
+<Note>
+Requires `uv` to be installed. marimo will automatically create an isolated environment with the dependencies declared in the notebook's script metadata.
+</Note>
+
+### Multi-File Sandbox
+
+When running a directory with `--sandbox`, each notebook gets its own isolated environment:
+
+```bash
+marimo edit ./notebooks --sandbox
+```
+
+<Warning>
+Multi-file sandbox mode requires the `pyzmq` package. Install with:
+
+```bash
+pip install marimo[sandbox]
+```
+</Warning>
+
+## Authentication
+
+### Token-Based Authentication
+
+```bash
+# Auto-generate random token
+marimo edit notebook.py --token
+
+# Use specific token
+marimo edit notebook.py --token-password my-secret-token
+
+# Read token from file
+marimo edit notebook.py --token-password-file ~/.marimo-token
+
+# Disable token (not recommended for remote access)
+marimo edit notebook.py --no-token
+```
+
+<Warning>
+Always use authentication when exposing marimo to untrusted networks.
+</Warning>
+
+## CORS and Origins
+
+Allow specific origins for CORS:
+
+```bash
+# Single origin
+marimo edit notebook.py --allow-origins https://example.com
+
+# Multiple origins
+marimo edit notebook.py --allow-origins https://app1.com --allow-origins https://app2.com
+
+# Allow all origins (use with caution)
+marimo edit notebook.py --allow-origins "*"
+```
+
+## Development Mode
+
+ Enable debug logging and auto-reload:
+
+```bash
+marimo -d edit notebook.py
+
+# Equivalent to:
+marimo --development-mode edit notebook.py
+```
+
+## Global Options
+
+These options work with any marimo command:
+
+```bash
+# Set log level
+marimo --log-level DEBUG edit notebook.py
+
+# Suppress output
+marimo --quiet run notebook.py
+
+# Auto-accept prompts
+marimo --yes convert notebook.ipynb
+```
+
+## Environment Variables
+
+### Skip Update Check
+
+```bash
+export MARIMO_SKIP_UPDATE_CHECK=1
+marimo edit notebook.py
+```
+
+### Custom Configuration
+
+```bash
+# Use custom config directory
+export MARIMO_CONFIG_DIR=~/.config/marimo-custom
+marimo edit notebook.py
+```
+
+## Performance Tips
+
+<AccordionGroup>
+  <Accordion title="Fast Startup">
+    Use `--skip-update-check` to skip version checking:
+
+    ```bash
+    marimo edit notebook.py --skip-update-check
+    ```
+  </Accordion>
+
+  <Accordion title="Session Cleanup">
+    Set shorter TTL for automatic session cleanup:
+
+    ```bash
+    marimo run notebook.py --session-ttl 60
+    ```
+  </Accordion>
+
+  <Accordion title="Watch Mode Optimization">
+    Install `watchdog` for more efficient file watching:
+
+    ```bash
+    pip install watchdog
+    marimo edit notebook.py --watch
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Checking Notebooks
+
+Lint and format notebooks before running:
+
+```bash
+# Check for issues
+marimo check notebook.py
+
+# Auto-fix issues
+marimo check notebook.py --fix
+
+# Check all notebooks
+marimo check **/*.py
+
+# Strict mode (warnings = errors)
+marimo check notebook.py --strict
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Sharing Notebooks" icon="share" href="/sharing-notebooks">
+    Export and deploy your notebooks
+  </Card>
+  <Card title="Package Management" icon="box" href="/package-management">
+    Manage dependencies automatically
+  </Card>
+</CardGroup>

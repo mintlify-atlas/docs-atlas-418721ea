@@ -1,0 +1,78 @@
+---
+title: md
+---
+
+Write markdown.
+
+This function takes a string of markdown as input and returns an `Html` object. Output the object as the last expression of a cell to render the markdown in your app.
+
+## Usage
+
+```python
+mo.md("# Hello, World!")
+```
+
+```python
+mo.md(
+    r'''
+    The exponential function $f(x) = e^x$ can be represented as
+
+    \[
+        f(x) = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \ldots.
+    \]
+    '''
+)
+```
+
+## Signature
+
+```python
+mo.md(text: str) -> Html
+```
+
+## Parameters
+
+<ParamField path="text" type="str" required>
+  A string of markdown.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An `Html` object.
+</ParamField>
+
+## Interpolation
+
+You can interpolate Python values into your markdown strings, for example using f-strings. `Html` objects and UI elements can be directly interpolated.
+
+```python
+text_input = mo.ui.text()
+mo.md(f"Enter some text: {text_input}")
+```
+
+For other objects, like plots, use marimo's `as_html` method to embed them in markdown:
+
+```python
+import matplotlib.pyplot as plt
+
+plt.plot([1, 2])
+axis = plt.gca()
+mo.md(f"Here's a plot: {mo.as_html(axis)}")
+```
+
+## LaTeX
+
+Enclose LaTeX in single `$` signs for inline math, and double `$$` for display math or square brackets for display math. (Use raw strings, prefixed with an "r", to use single backslashes.)
+
+```python
+mo.md(
+    r'''
+    The exponential function $f(x) = e^x$ can be represented as
+
+    \[
+        f(x) = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \ldots.
+    \]
+    '''
+)
+```

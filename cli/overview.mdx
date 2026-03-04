@@ -1,0 +1,100 @@
+---
+title: 'CLI Overview'
+description: 'Command-line interface for marimo reactive notebooks'
+---
+
+# marimo CLI
+
+marimo provides a powerful command-line interface for creating, editing, running, and exporting reactive Python notebooks.
+
+## Global Options
+
+These options can be used with any marimo command:
+
+**-l, --log-level LEVEL** - Set logging level
+- Choices: `DEBUG`, `INFO`, `WARN`, `ERROR`, `CRITICAL`
+- Default: `WARN`
+
+**-q, --quiet** - Suppress standard output
+- Type: Flag
+- Default: `False`
+
+**-y, --yes** - Automatic yes to prompts, running non-interactively
+- Type: Flag
+- Default: `False`
+
+**-d, --development-mode** - Run in development mode; enables debug logs and server autoreload
+- Type: Flag
+- Default: `False`
+
+**-h, --help** - Show help message and exit
+
+**--version** - Show version and exit
+
+## Main Commands
+
+### Interactive Commands
+
+- **[marimo edit](/cli/edit)** - Create or edit notebooks in an interactive editor
+- **marimo new** - Create an empty notebook or generate from AI prompt
+- **[marimo run](/cli/run)** - Run a notebook as a read-only app
+- **[marimo tutorial](/cli/tutorial)** - Open a tutorial notebook
+
+### Conversion & Export
+
+- **[marimo convert](/cli/convert)** - Convert Jupyter notebooks, Markdown, or Python scripts to marimo
+- **[marimo export](/cli/export)** - Export notebooks to various formats (HTML, PDF, script, etc.)
+
+### Configuration
+
+- **[marimo config](/cli/config)** - Manage marimo configuration settings
+
+### Utilities
+
+- **marimo check** - Check and format marimo files
+- **marimo env** - Print environment information for debugging
+- **marimo recover** - Recover a notebook from JSON
+- **marimo shell-completion** - Install shell completions
+
+## Quick Start Examples
+
+```bash
+# Create a new notebook
+marimo edit
+
+# Edit an existing notebook
+marimo edit notebook.py
+
+# Run a notebook as an app
+marimo run notebook.py
+
+# Start with a tutorial
+marimo tutorial intro
+
+# Convert a Jupyter notebook
+marimo convert notebook.ipynb -o notebook.py
+
+# Export to HTML
+marimo export html notebook.py -o output.html
+
+# Check and format notebooks
+marimo check --fix notebook.py
+```
+
+## Getting Help
+
+For help with any command, use the `--help` flag:
+
+```bash
+marimo --help
+marimo edit --help
+marimo export html --help
+```
+
+## Version Information
+
+To check your marimo version:
+
+```bash
+marimo --version
+```

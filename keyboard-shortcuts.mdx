@@ -1,0 +1,513 @@
+---
+title: Keyboard Shortcuts
+description: Master marimo's keyboard shortcuts including vim mode support, custom keybindings, and productivity tips for efficient notebook editing.
+---
+
+marimo provides extensive keyboard shortcuts to help you edit notebooks efficiently. Whether you prefer standard keybindings or vim mode, marimo gives you powerful tools for navigating and editing cells without reaching for the mouse.
+
+## Viewing Shortcuts
+
+Access the keyboard shortcuts reference:
+
+- **Press `Ctrl/Cmd+Shift+H`** to open the hotkeys menu
+- View shortcuts directly in the settings menu (⚙️ → Hotkeys)
+
+<Tip>
+The hotkeys menu shows platform-specific shortcuts (⌘ on Mac, Ctrl on Windows/Linux) and indicates which shortcuts you've customized.
+</Tip>
+
+## Essential Shortcuts
+
+These shortcuts work in both default and vim modes:
+
+### Cell Operations
+
+| Action | Shortcut (Mac) | Shortcut (Windows/Linux) |
+|--------|----------------|-------------------------|
+| Run cell | `Cmd+Enter` | `Ctrl+Enter` |
+| Run cell and create below | `Shift+Enter` | `Shift+Enter` |
+| Create cell below | `Cmd+B` | `Ctrl+B` |
+| Create cell above | `Cmd+Shift+B` | `Ctrl+Shift+B` |
+| Delete cell | `Cmd+Backspace` | `Ctrl+Backspace` |
+| Move cell up | `Cmd+Shift+Up` | `Ctrl+Shift+Up` |
+| Move cell down | `Cmd+Shift+Down` | `Ctrl+Shift+Down` |
+| Focus cell above | `Ctrl+Up` | `Ctrl+Up` |
+| Focus cell below | `Ctrl+Down` | `Ctrl+Down` |
+
+### Code Editing
+
+| Action | Shortcut (Mac) | Shortcut (Windows/Linux) |
+|--------|----------------|-------------------------|
+| Format cell | `Cmd+Shift+F` | `Ctrl+Shift+F` |
+| Trigger completion | `Tab` or `Cmd+Space` | `Tab` or `Ctrl+Space` |
+| AI assistance | `Cmd+Shift+E` | `Ctrl+Shift+E` |
+| Find and replace | `Cmd+F` | `Ctrl+F` |
+| Go to definition | `F12` or `Cmd+Click` | `F12` or `Ctrl+Click` |
+| Undo | `Cmd+Z` | `Ctrl+Z` |
+| Redo | `Cmd+Shift+Z` | `Ctrl+Shift+Z` |
+
+### Global Actions
+
+| Action | Shortcut (Mac) | Shortcut (Windows/Linux) |
+|--------|----------------|-------------------------|
+| Save notebook | `Cmd+S` | `Ctrl+S` |
+| Command palette | `Cmd+K` | `Ctrl+K` |
+| Run all stale cells | `Cmd+Shift+R` | `Ctrl+Shift+R` |
+| Interrupt execution | `Cmd+I` | `Ctrl+I` |
+| Toggle sidebar | `Cmd+\` | `Ctrl+\` |
+| Toggle terminal | `Cmd+J` | `Ctrl+J` |
+| Show help | `Cmd+Shift+H` | `Ctrl+Shift+H` |
+
+## Vim Mode
+
+marimo supports vim keybindings for modal editing, bringing familiar vim workflows to notebook editing.
+
+### Enabling Vim Mode
+
+**Via UI:**
+
+1. Open settings (⚙️)
+2. Navigate to "Keymap" tab
+3. Select "vim" preset
+
+**Via Configuration:**
+
+```toml title="marimo.toml"
+[keymap]
+preset = "vim"
+```
+
+### Vim Mode Basics
+
+Vim mode provides three modes:
+
+- **Normal mode**: Navigate and manipulate cells (press `Esc` to enter)
+- **Insert mode**: Edit cell content (press `i`, `a`, `o`, etc. to enter)
+- **Visual mode**: Select text (press `v` in normal mode)
+
+### Vim Keybindings
+
+When vim mode is enabled:
+
+**Normal mode (cell navigation):**
+
+| Key | Action |
+|-----|--------|
+| `j` | Focus cell below |
+| `k` | Focus cell above |
+| `dd` | Delete cell |
+| `yy` | Copy cell |
+| `p` | Paste cell below |
+| `o` | Create cell below and enter insert mode |
+| `O` | Create cell above and enter insert mode |
+| `Shift+J` | Move cell down |
+| `Shift+K` | Move cell up |
+| `gg` | Go to first cell |
+| `G` | Go to last cell |
+| `Ctrl+D` | Scroll down |
+| `Ctrl+U` | Scroll up |
+
+**Insert mode (code editing):**
+
+- Standard vim editing commands work within cells
+- `Esc` returns to normal mode
+- `Ctrl+[` also exits to normal mode
+
+**Visual mode:**
+
+- `v` enters character-wise visual mode
+- `V` enters line-wise visual mode
+- `Ctrl+V` enters block visual mode
+
+### Custom vimrc
+
+Load custom vim keybindings from a vimrc file:
+
+```toml title="pyproject.toml"
+[tool.marimo.keymap]
+preset = "vim"
+vimrc = "configs/.vimrc"  # Path relative to pyproject.toml
+```
+
+Or in user config:
+
+```toml title="marimo.toml"
+[keymap]
+preset = "vim"
+vimrc = "/home/user/.vimrc"  # Absolute path
+```
+
+**Example vimrc:**
+
+```vim title=".vimrc"
+" Custom vim mappings for marimo
+imap jj <Esc>
+nmap <C-h> :tabprevious<CR>
+nmap <C-l> :tabnext<CR>
+```
+
+<Note>
+Not all vim features are supported. marimo implements core vim navigation and editing commands optimized for notebook workflows.
+</Note>
+
+## Custom Keybindings
+
+Customize any shortcut to match your preferences.
+
+### Via Settings Menu
+
+1. Open settings (⚙️)
+2. Navigate to "Hotkeys" tab
+3. Click on a shortcut to edit
+4. Press your desired key combination
+5. Save changes
+
+<div align="center">
+<img src="/_static/docs-hotkeys-settings.png" width="740px"/>
+</div>
+
+### Via Configuration File
+
+Edit keybindings in your `marimo.toml`:
+
+```toml title="marimo.toml"
+[keymap]
+preset = "default"
+
+[keymap.overrides]
+"cell.run" = "Cmd+R"              # Custom run shortcut
+"cell.createBelow" = "Cmd+N"      # Custom new cell
+"global.save" = "Cmd+Shift+S"     # Custom save
+"cell.format" = "Cmd+Shift+P"     # Custom format
+```
+
+**Key format:**
+
+- Use `+` to combine modifier keys
+- Modifiers: `Cmd`, `Ctrl`, `Shift`, `Alt`
+- Use `Cmd` on Mac, `Ctrl` on Windows/Linux
+- Special keys: `Enter`, `Space`, `Escape`, `Tab`, `Backspace`, `Delete`
+- Arrow keys: `Up`, `Down`, `Left`, `Right`
+- Function keys: `F1`, `F2`, ..., `F12`
+
+**Examples:**
+
+```toml
+"cell.run" = "Ctrl+Enter"           # Ctrl+Enter on all platforms
+"cell.createBelow" = "Cmd+Shift+N"  # Cmd+Shift+N (use Ctrl on Windows)
+"global.save" = "Ctrl+S"            # Standard save
+"cell.delete" = "Shift+Delete"      # Shift+Delete
+```
+
+### Available Actions
+
+Here are all customizable keyboard shortcuts:
+
+<Accordion title="Cell Actions">
+
+| Action | Default (Mac) | Default (Win/Linux) | Description |
+|--------|---------------|---------------------|-------------|
+| `cell.run` | `Cmd+Enter` | `Ctrl+Enter` | Execute cell |
+| `cell.runAndNewBelow` | `Shift+Enter` | `Shift+Enter` | Run and create below |
+| `cell.runAndNewAbove` | - | - | Run and create above |
+| `cell.createBelow` | `Cmd+B` | `Ctrl+B` | New cell below |
+| `cell.createAbove` | `Cmd+Shift+B` | `Ctrl+Shift+B` | New cell above |
+| `cell.delete` | `Cmd+Backspace` | `Ctrl+Backspace` | Delete cell |
+| `cell.moveUp` | `Cmd+Shift+Up` | `Ctrl+Shift+Up` | Move cell up |
+| `cell.moveDown` | `Cmd+Shift+Down` | `Ctrl+Shift+Down` | Move cell down |
+| `cell.moveLeft` | `Cmd+Shift+Left` | `Ctrl+Shift+Left` | Move to left column |
+| `cell.moveRight` | `Cmd+Shift+Right` | `Ctrl+Shift+Right` | Move to right column |
+| `cell.focusUp` | `Ctrl+Up` | `Ctrl+Up` | Focus cell above |
+| `cell.focusDown` | `Ctrl+Down` | `Ctrl+Down` | Focus cell below |
+| `cell.sendToTop` | - | - | Move to top |
+| `cell.sendToBottom` | - | - | Move to bottom |
+| `cell.format` | `Cmd+Shift+F` | `Ctrl+Shift+F` | Format code |
+| `cell.aiCompletion` | `Cmd+Shift+E` | `Ctrl+Shift+E` | AI assistance |
+| `cell.hideCode` | - | - | Toggle code visibility |
+| `cell.viewAsMarkdown` | - | - | Render as markdown |
+| `cell.fold` | - | - | Fold cell |
+| `cell.unfold` | - | - | Unfold cell |
+| `cell.splitCell` | - | - | Split cell at cursor |
+| `cell.complete` | `Tab`, `Cmd+Space` | `Tab`, `Ctrl+Space` | Trigger completion |
+| `cell.findAndReplace` | `Cmd+F` | `Ctrl+F` | Find and replace |
+| `cell.goToDefinition` | `F12` | `F12` | Go to definition |
+| `cell.cellActions` | - | - | Open cell actions |
+| `cell.undo` | `Cmd+Z` | `Ctrl+Z` | Undo |
+| `cell.redo` | `Cmd+Shift+Z` | `Ctrl+Shift+Z` | Redo |
+| `cell.selectNextOccurrence` | `Cmd+D` | `Ctrl+D` | Multi-cursor select |
+
+</Accordion>
+
+<Accordion title="Global Actions">
+
+| Action | Default (Mac) | Default (Win/Linux) | Description |
+|--------|---------------|---------------------|-------------|
+| `global.save` | `Cmd+S` | `Ctrl+S` | Save notebook |
+| `global.commandPalette` | `Cmd+K` | `Ctrl+K` | Open command palette |
+| `global.runStale` | `Cmd+Shift+R` | `Ctrl+Shift+R` | Run stale cells |
+| `global.interrupt` | `Cmd+I` | `Ctrl+I` | Interrupt execution |
+| `global.toggleSidebar` | `Cmd+\` | `Ctrl+\` | Toggle sidebar |
+| `global.toggleTerminal` | `Cmd+J` | `Ctrl+J` | Toggle terminal |
+| `global.showHelp` | `Cmd+Shift+H` | `Ctrl+Shift+H` | Show shortcuts |
+| `global.formatAll` | - | - | Format all cells |
+| `global.foldCode` | - | - | Fold all cells |
+| `global.unfoldCode` | - | - | Unfold all cells |
+| `global.hideCode` | - | - | Hide all code |
+| `global.focusTop` | - | - | Focus first cell |
+| `global.focusBottom` | - | - | Focus last cell |
+| `global.toggleMinimap` | - | - | Toggle dataflow minimap |
+| `global.toggleLanguage` | - | - | Switch cell language |
+
+</Accordion>
+
+<Accordion title="Completion Actions">
+
+| Action | Default | Description |
+|--------|---------|-------------|
+| `completion.moveUp` | `Up`, `Ctrl+P` | Previous suggestion |
+| `completion.moveDown` | `Down`, `Ctrl+N` | Next suggestion |
+
+</Accordion>
+
+<Accordion title="Markdown Actions">
+
+| Action | Default (Mac) | Default (Win/Linux) | Description |
+|--------|---------------|---------------------|-------------|
+| `markdown.bold` | `Cmd+B` | `Ctrl+B` | Bold text |
+| `markdown.italic` | `Cmd+I` | `Ctrl+I` | Italic text |
+| `markdown.code` | `Cmd+E` | `Ctrl+E` | Inline code |
+| `markdown.link` | `Cmd+K` | `Ctrl+K` | Insert link |
+| `markdown.orderedList` | - | - | Ordered list |
+| `markdown.unorderedList` | - | - | Unordered list |
+| `markdown.blockquote` | - | - | Blockquote |
+
+</Accordion>
+
+## Productivity Tips
+
+<Accordion title="Master the command palette">
+
+The command palette (`Cmd/Ctrl+K`) provides quick access to all marimo actions:
+
+- Search for commands by name
+- See keyboard shortcuts for each command
+- Execute commands without remembering shortcuts
+- Filter by category (cell, global, etc.)
+
+**Examples:**
+- Type "format" to find formatting commands
+- Type "run" to see execution options
+- Type "fold" for code folding actions
+
+</Accordion>
+
+<Accordion title="Use multi-cursor editing">
+
+Select multiple occurrences with `Cmd/Ctrl+D`:
+
+1. Place cursor on a variable name
+2. Press `Cmd/Ctrl+D` to select next occurrence
+3. Continue pressing to select more occurrences
+4. Edit all at once
+
+**Alternative**: `Cmd/Ctrl+Shift+L` selects all occurrences at once
+
+</Accordion>
+
+<Accordion title="Navigate with cell focus shortcuts">
+
+Quickly navigate between cells without the mouse:
+
+- `Ctrl+Up`/`Ctrl+Down`: Move focus between cells
+- `Cmd/Ctrl+Shift+B`: Create cell above current
+- `Cmd/Ctrl+B`: Create cell below current
+- In vim mode: `j`/`k` to move between cells
+
+</Accordion>
+
+<Accordion title="Combine shortcuts for workflows">
+
+Create efficient workflows by chaining shortcuts:
+
+**Add and run new cell:**
+1. `Cmd/Ctrl+B` (create below)
+2. Type code
+3. `Shift+Enter` (run and create next)
+
+**Refactor with AI:**
+1. Write initial code
+2. `Cmd/Ctrl+Shift+E` (AI refactor)
+3. Review and accept
+
+**Format and save:**
+1. `Cmd/Ctrl+Shift+F` (format all)
+2. `Cmd/Ctrl+S` (save)
+
+</Accordion>
+
+<Accordion title="Customize for your workflow">
+
+Adapt shortcuts to match your most common actions:
+
+```toml title="marimo.toml"
+[keymap.overrides]
+# Quick cell creation
+"cell.createBelow" = "Cmd+N"
+
+# Fast formatting
+"cell.format" = "Cmd+Shift+P"
+
+# AI shortcuts
+"cell.aiCompletion" = "Cmd+Shift+A"
+```
+
+</Accordion>
+
+## Conflicting Shortcuts
+
+marimo detects and warns about conflicting keybindings:
+
+<div align="center">
+<img src="/_static/docs-duplicate-shortcut-banner.png" width="740px"/>
+</div>
+
+When conflicts occur:
+
+1. marimo shows a warning banner
+2. Click "View conflicts" to see which shortcuts conflict
+3. Reassign one of the conflicting shortcuts
+4. Conflicts are automatically resolved
+
+<Tip>
+Avoid assigning the same shortcut to multiple actions in different contexts (e.g., don't use `Cmd+B` for both "bold" in markdown and "create cell below" globally).
+</Tip>
+
+## Platform-Specific Behavior
+
+marimo adapts shortcuts to your platform:
+
+### macOS
+
+- `Cmd` is the primary modifier (Command/⌘)
+- `Ctrl` used for navigation (Ctrl+Up/Down)
+- Some shortcuts also work with `Ctrl` for compatibility
+
+### Windows/Linux
+
+- `Ctrl` is the primary modifier
+- Windows: `Alt` behaves like `Option` on Mac
+- Linux: Follows standard Linux desktop conventions
+
+### Auto-Detection
+
+marimo automatically detects your platform and shows the appropriate shortcuts in the UI and help menu.
+
+## Resetting Shortcuts
+
+Restore default shortcuts:
+
+**Reset individual shortcuts:**
+
+1. Open settings → Hotkeys
+2. Click the shortcut you want to reset
+3. Press the reset button
+
+**Reset all shortcuts:**
+
+Remove overrides from your config file:
+
+```toml title="marimo.toml"
+[keymap]
+preset = "default"
+# Remove all [keymap.overrides]
+```
+
+Or delete the entire `[keymap]` section to restore all defaults.
+
+## Accessibility
+
+marimo provides keyboard accessibility features:
+
+- **Full keyboard navigation**: All features accessible without a mouse
+- **Screen reader support**: Proper ARIA labels on interactive elements
+- **Focus indicators**: Visual feedback for keyboard focus
+- **Skip links**: Jump to main content quickly
+
+<Note>
+If you encounter accessibility issues, please [report them on GitHub](https://github.com/marimo-team/marimo/issues) or reach out on [Discord](https://marimo.io/discord).
+</Note>
+
+## Troubleshooting
+
+<Accordion title="Shortcuts not working">
+
+**Possible causes:**
+
+1. **Browser conflicts**: Some browsers capture certain shortcuts
+   - Solution: Use marimo desktop app or try different browser
+   
+2. **OS shortcuts**: Operating system may capture shortcuts
+   - Solution: Customize conflicting shortcuts in marimo
+   
+3. **Extension conflicts**: Browser extensions may intercept shortcuts
+   - Solution: Disable extensions or use different shortcuts
+
+**Test shortcuts:**
+
+1. Open command palette (`Cmd/Ctrl+K`)
+2. Search for the action
+3. See if shortcut is listed
+4. Try executing from palette instead
+
+</Accordion>
+
+<Accordion title="Vim mode not responding">
+
+**Check configuration:**
+
+```toml
+[keymap]
+preset = "vim"  # Must be set to "vim"
+```
+
+**Reload the page** after changing vim mode settings.
+
+**Ensure you're in the correct mode:**
+- Press `Esc` to enter normal mode
+- Look for mode indicator (if visible)
+- Try basic commands: `j`, `k`, `dd`
+
+</Accordion>
+
+<Accordion title="Custom shortcuts not saving">
+
+**Check file permissions:**
+
+```bash
+ls -l ~/.config/marimo/marimo.toml
+```
+
+Ensure you have write permissions.
+
+**Verify syntax:**
+
+```toml
+# Correct
+[keymap.overrides]
+"cell.run" = "Cmd+Enter"
+
+# Incorrect (missing quotes)
+[keymap.overrides]
+cell.run = Cmd+Enter
+```
+
+**Restart marimo** after manual config edits.
+
+</Accordion>
+
+## Related Documentation
+
+- [Vim Keybindings](guides/editor_features/overview.md#vim-keybindings) - Detailed vim mode documentation
+- [Configuration](configuration.mdx) - Keymap configuration options
+- [Hotkeys Guide](guides/editor_features/hotkeys.md) - Additional hotkey information
+- [Code Completion](code-completion.mdx) - Completion shortcuts

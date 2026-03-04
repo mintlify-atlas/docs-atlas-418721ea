@@ -1,0 +1,113 @@
+---
+title: 'Slider'
+description: 'Numeric slider for selecting values'
+---
+
+# mo.ui.slider
+
+Create a numeric slider for selecting values from a range.
+
+## Signature
+
+```python
+mo.ui.slider(
+    start: Numeric | None = None,
+    stop: Numeric | None = None,
+    step: Numeric | None = None,
+    value: Numeric | None = None,
+    debounce: bool = False,
+    *,
+    label: str = "",
+    on_change: Callable[[Numeric], None] | None = None,
+    disabled: bool = False,
+    orientation: Literal["horizontal", "vertical"] = "horizontal",
+    show_value: bool = False,
+    include_input: bool = False,
+    steps: Sequence[Numeric] | None = None,
+    full_width: bool = False
+)
+```
+
+## Parameters
+
+<ParamField path="start" type="Numeric">
+  Minimum value of the slider range
+</ParamField>
+
+<ParamField path="stop" type="Numeric">
+  Maximum value of the slider range
+</ParamField>
+
+<ParamField path="step" type="Numeric">
+  Increment between values
+</ParamField>
+
+<ParamField path="value" type="Numeric">
+  Initial value (defaults to start)
+</ParamField>
+
+<ParamField path="debounce" type="bool" default="False">
+  Only send value on mouse-up/drag-end
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the slider
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether the slider is disabled
+</ParamField>
+
+<ParamField path="orientation" type="'horizontal' | 'vertical'" default="'horizontal'">
+  Slider orientation
+</ParamField>
+
+<ParamField path="show_value" type="bool" default="False">
+  Display current value
+</ParamField>
+
+<ParamField path="include_input" type="bool" default="False">
+  Show editable input field
+</ParamField>
+
+<ParamField path="steps" type="Sequence[Numeric]">
+  Custom step values (mutually exclusive with start/stop/step)
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+
+# Basic slider
+slider = mo.ui.slider(start=0, stop=100, step=1)
+slider
+```
+
+```python
+# Slider with value display
+slider = mo.ui.slider(
+    start=0,
+    stop=10,
+    step=0.1,
+    value=5,
+    label="**Temperature**",
+    show_value=True
+)
+```
+
+```python
+# Custom steps (logarithmic scale)
+import numpy as np
+
+log_slider = mo.ui.slider(
+    steps=np.logspace(0, 3, 10),
+    label="Log scale"
+)
+```
+
+## Creating from DataFrame
+
+```python
+slider = mo.ui.slider.from_series(df["age"])
+```

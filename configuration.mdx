@@ -1,0 +1,649 @@
+---
+title: Configuration
+description: Learn how to configure marimo notebooks using marimo.toml, pyproject.toml, and script metadata for customizing editor behavior, runtime settings, and more.
+---
+
+marimo provides flexible configuration options to customize your development environment. Configuration can be applied globally, per-project, or per-notebook, giving you fine-grained control over editor behavior, runtime settings, code completion, and more.
+
+## Configuration Hierarchy
+
+marimo merges configuration from multiple sources in order of precedence:
+
+1. **Script metadata** (highest priority) - Embedded in notebook files
+2. **Project configuration** - `pyproject.toml` in project directory
+3. **User configuration** (lowest priority) - `~/.config/marimo/marimo.toml`
+
+<Note>
+Settings from higher-priority sources override those from lower-priority sources. Settings configured in `pyproject.toml` or script metadata cannot be changed through the marimo UI.
+</Note>
+
+## User Configuration
+
+User configuration applies globally to all marimo notebooks and is stored in `~/.config/marimo/marimo.toml` (or `$XDG_CONFIG_HOME/marimo/marimo.toml`).
+
+### Locating Your Config File
+
+Find your user configuration file:
+
+```bash
+# Show config file location and current settings
+marimo config show
+
+# Show just the config file path
+marimo config show | head -n 1
+
+# Describe all available configuration options
+marimo config describe
+```
+
+### Creating and Editing
+
+marimo creates a config file automatically on first run. You can edit it through:
+
+**Via UI (Recommended):**
+
+1. Open any notebook: `marimo edit`
+2. Click settings icon (⚙️) in top-right
+3. Navigate to different configuration tabs
+4. Changes save automatically
+
+**Via Text Editor:**
+
+```bash
+# Edit directly
+$EDITOR ~/.config/marimo/marimo.toml
+```
+
+### Configuration File Format
+
+The `marimo.toml` file uses TOML format:
+
+```toml title="marimo.toml"
+[completion]
+activate_on_typing = true
+signature_hint_on_typing = false
+copilot = "github"
+
+[display]
+theme = "light"
+code_editor_font_size = 14
+cell_output = "below"
+default_width = "medium"
+
+[keymap]
+preset = "default"  # or "vim"
+
+[runtime]
+auto_instantiate = false
+on_cell_change = "autorun"
+auto_reload = "off"
+
+[save]
+autosave = "after_delay"
+autosave_delay = 1000
+format_on_save = false
+
+[package_management]
+manager = "uv"  # or "pip", "poetry", "rye", "pixi"
+```
+
+## Project Configuration
+
+Project configuration is stored in `pyproject.toml` and applies to all notebooks in the project directory (and subdirectories). This is ideal for team settings and ensuring consistent behavior across a codebase.
+
+### Setup
+
+Create or edit `pyproject.toml` in your project root:
+
+```toml title="pyproject.toml"
+[tool.marimo.formatting]
+line_length = 88  # Black-compatible formatting
+
+[tool.marimo.display]
+default_width = "full"
+theme = "dark"
+
+[tool.marimo.runtime]
+auto_instantiate = false
+auto_reload = "lazy"
+default_sql_output = "polars"
+
+[tool.marimo.package_management]
+manager = "uv"
+
+[tool.marimo.keymap]
+preset = "vim"
+vimrc = "configs/.vimrc"  # Path relative to pyproject.toml
+```
+
+### Project-Specific Paths
+
+marimo resolves relative paths in `pyproject.toml` relative to the file's location:
+
+```toml title="pyproject.toml"
+[tool.marimo.runtime]
+pythonpath = ["src", "lib"]  # Adds project_root/src and project_root/lib to sys.path
+dotenv = [".env", ".env.local"]  # Loads environment variables from these files
+
+[tool.marimo.display]
+custom_css = ["styles/notebook.css"]  # Custom styling
+
+[tool.marimo.keymap]
+vimrc = "configs/.vimrc"  # Load vim keybindings
+```
+
+### Configuration Discovery
+
+marimo searches for `pyproject.toml` by walking up the directory tree from the notebook location:
+
+```
+/home/user/project/
+├── pyproject.toml          # ← Found and applied
+├── notebooks/
+│   └── analysis.py         # ← Opened notebook
+└── src/
+```
+
+## Script Metadata Configuration
+
+Embed configuration directly in notebook files using PEP 723 script metadata. This has the highest precedence and travels with the notebook.
+
+### Adding Script Metadata
+
+Add a special comment block at the top of your notebook:
+
+```python title="notebook.py"
+# /// script
+# [tool.marimo.runtime]
+# auto_instantiate = false
+# on_cell_change = "lazy"
+# 
+# [tool.marimo.display]
+# theme = "dark"
+# cell_output = "above"
+# ///
+
+import marimo as mo
+
+__generated_with = "0.20.3"
+app = mo.App()
+
+@app.cell
+def __():
+    import pandas as pd
+    return pd,
+```
+
+This configuration applies only to this specific notebook and overrides user and project settings.
+
+<Tip>
+**Use script metadata for:**
+- Notebook-specific display preferences (theme, width)
+- Disabling auto-instantiate for expensive notebooks
+- Lazy execution for interactive analysis
+- Configuration that should travel with the notebook
+</Tip>
+
+## Configuration Categories
+
+### Completion
+
+Control code completion and AI copilots:
+
+```toml
+[completion]
+activate_on_typing = true           # Auto-show completions while typing
+signature_hint_on_typing = false    # Show function signatures on trigger only
+copilot = "github"                  # Options: false, "github", "codeium", "custom"
+codeium_api_key = "your-key"        # For Codeium/Windsurf
+```
+
+See [Code Completion](code-completion.mdx) for details.
+
+### Display
+
+Customize editor appearance:
+
+```toml
+[display]
+theme = "light"                     # Options: "light", "dark", "system"
+code_editor_font_size = 14          # Font size in pixels
+cell_output = "below"               # Options: "above", "below"
+default_width = "medium"            # Options: "normal", "medium", "full", "compact", "columns"
+dataframes = "rich"                 # Options: "rich", "plain"
+default_table_page_size = 10        # Rows per page in tables
+default_table_max_columns = 50      # Max columns to display
+reference_highlighting = true       # Highlight variable references
+locale = "en-US"                    # Locale for date formatting
+custom_css = ["custom.css"]         # Custom CSS files
+```
+
+### Formatting
+
+Code formatting options:
+
+```toml
+[formatting]
+line_length = 79  # Max characters per line (default matches PEP 8)
+```
+
+marimo uses Ruff for formatting. Install with:
+
+```bash
+pip install ruff
+```
+
+### Keymap
+
+Keyboard shortcuts and vim mode:
+
+```toml
+[keymap]
+preset = "default"                  # Options: "default", "vim"
+vimrc = "path/to/.vimrc"            # Load vim keybindings from file
+destructive_delete = false          # Allow deleting cells with content
+
+# Custom keybindings
+[keymap.overrides]
+"cell.run" = "Ctrl-Enter"
+"cell.createBelow" = "Ctrl-b"
+```
+
+See [Keyboard Shortcuts](keyboard-shortcuts.mdx) for all available actions.
+
+### Runtime
+
+Control notebook execution behavior:
+
+```toml
+[runtime]
+auto_instantiate = false            # Auto-run cells on notebook open
+auto_reload = "off"                 # Options: "off", "lazy", "autorun"
+reactive_tests = true               # Auto-run test functions
+on_cell_change = "autorun"          # Options: "autorun", "lazy"
+watcher_on_save = "lazy"            # Options: "lazy", "autorun"
+output_max_bytes = 8000000          # Max output size (8MB)
+std_stream_max_bytes = 1000000      # Max console output (1MB)
+default_sql_output = "auto"         # Options: "auto", "polars", "pandas", "native"
+default_csv_encoding = "utf-8"      # CSV export encoding
+pythonpath = ["src", "lib"]         # Additional Python paths
+dotenv = [".env"]                   # Environment variable files to load
+```
+
+**Key settings explained:**
+
+- `auto_instantiate`: If `false`, cells don't run automatically when opening a notebook (useful for expensive computations)
+- `on_cell_change`: How dependent cells react when an ancestor changes
+  - `"autorun"`: Automatically re-run dependent cells
+  - `"lazy"`: Mark dependent cells as stale without running
+- `auto_reload`: Automatically reload modified Python modules
+  - `"off"`: No auto-reloading
+  - `"lazy"`: Mark importing cells as stale when modules change
+  - `"autorun"`: Auto-run importing cells when modules change
+
+See [Runtime Configuration](guides/configuration/runtime_configuration.md) for details.
+
+### Save
+
+Autosave and formatting:
+
+```toml
+[save]
+autosave = "after_delay"            # Options: "off", "after_delay"
+autosave_delay = 1000               # Milliseconds before autosave
+format_on_save = false              # Auto-format code on save
+```
+
+### Package Management
+
+Package manager preference:
+
+```toml
+[package_management]
+manager = "uv"  # Options: "pip", "uv", "poetry", "rye", "pixi"
+```
+
+See [Package Management](guides/editor_features/package_management.md) for details.
+
+### Server
+
+Server behavior:
+
+```toml
+[server]
+browser = "default"                 # Or "firefox", "chrome", etc.
+follow_symlink = false              # Follow symlinks in static assets
+disable_file_downloads = false      # Hide file download button
+```
+
+### AI Configuration
+
+AI assistance and copilots:
+
+```toml
+[ai]
+rules = "Prefer polars over pandas"  # Custom AI rules
+max_tokens = 2048                     # Max tokens for AI responses
+mode = "ask"                          # Options: "ask", "manual", "agent"
+inline_tooltip = true                 # Enable inline AI tooltips
+
+[ai.models]
+chat_model = "claude-4.5-sonnet"
+edit_model = "gpt-4o"
+autocomplete_model = "github/copilot"
+displayed_models = ["gpt-4o", "claude-4.5-sonnet"]
+custom_models = []
+
+# Provider configurations
+[ai.open_ai]
+api_key = "sk-..."
+base_url = "https://api.openai.com/v1"  # Optional
+
+[ai.anthropic]
+api_key = "sk-ant-..."
+
+[ai.github]
+api_key = "ghp_..."
+
+[ai.github.copilot_settings.http]
+proxy = "http://proxy.example.com:8888"
+proxyStrictSSL = false
+```
+
+See [AI Completion](guides/editor_features/ai_completion.md) and [LLM Providers](guides/configuration/llm_providers.md) for details.
+
+### Language Servers
+
+Configure LSP servers for enhanced code intelligence:
+
+```toml
+[language_servers.pylsp]
+enabled = true
+enable_mypy = true
+enable_ruff = true
+enable_flake8 = false
+enable_pydocstyle = false
+
+[language_servers.basedpyright]
+enabled = true
+
+[language_servers.ty]
+enabled = false
+
+[language_servers.pyrefly]
+enabled = false
+```
+
+See [Language Server Protocol](guides/editor_features/language_server.md) for details.
+
+### Diagnostics
+
+Error checking and linting:
+
+```toml
+[diagnostics]
+enabled = true        # Show diagnostics in editor
+sql_linter = true     # Lint SQL cells
+```
+
+### Snippets
+
+Code snippets configuration:
+
+```toml
+[snippets]
+custom_paths = ["~/.marimo/snippets"]
+include_default_snippets = true
+```
+
+See [Snippets](guides/configuration/snippets.md) for details.
+
+### Experimental Features
+
+Enable preview features:
+
+```toml
+[experimental]
+markdown = true       # Enhanced markdown features
+wasm_layouts = true   # WebAssembly layout support
+```
+
+<Note>
+Experimental features may change or be removed in future versions.
+</Note>
+
+## Environment Variables
+
+marimo supports environment variables for advanced configuration:
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `MARIMO_OUTPUT_MAX_BYTES` | Max output size before truncation | 8,000,000 (8MB) |
+| `MARIMO_STD_STREAM_MAX_BYTES` | Max console output size | 1,000,000 (1MB) |
+| `MARIMO_SKIP_UPDATE_CHECK` | Skip version update checks | Not set |
+| `MARIMO_SQL_DEFAULT_LIMIT` | Default SQL query row limit | Not set |
+| `MARIMO_TRACING` | Enable distributed tracing | "false" |
+| `MARIMO_MANAGE_SCRIPT_METADATA` | Manage PEP 723 metadata | "false" |
+
+Set environment variables in your shell or `.env` file:
+
+```bash
+export MARIMO_OUTPUT_MAX_BYTES=16000000
+export MARIMO_SKIP_UPDATE_CHECK=1
+```
+
+Or load from `.env` files:
+
+```toml title="pyproject.toml"
+[tool.marimo.runtime]
+dotenv = [".env", ".env.local"]
+```
+
+<Note>
+Prefer configuring `output_max_bytes` and `std_stream_max_bytes` in `pyproject.toml` rather than environment variables for better reproducibility.
+</Note>
+
+## Configuration Examples
+
+### Team Data Science Setup
+
+```toml title="pyproject.toml"
+[tool.marimo.formatting]
+line_length = 88  # Black standard
+
+[tool.marimo.display]
+default_width = "full"
+theme = "system"  # Respect OS theme
+
+[tool.marimo.runtime]
+auto_instantiate = false  # Don't auto-run expensive notebooks
+on_cell_change = "lazy"   # Manual control over execution
+default_sql_output = "polars"  # Team uses Polars
+pythonpath = ["src"]
+dotenv = [".env"]
+
+[tool.marimo.package_management]
+manager = "uv"  # Fast package management
+
+[tool.marimo.ai]
+rules = """
+Prefer polars over pandas for dataframes.
+Use altair for declarative visualizations.
+Include type hints on all functions.
+"""
+```
+
+### Individual Developer Setup
+
+```toml title="~/.config/marimo/marimo.toml"
+[completion]
+activate_on_typing = true
+copilot = "github"
+
+[display]
+theme = "dark"
+code_editor_font_size = 16
+
+[keymap]
+preset = "vim"
+vimrc = "~/.vimrc"
+
+[save]
+autosave = "after_delay"
+autosave_delay = 500  # Fast autosave
+format_on_save = true
+
+[ai.open_ai]
+api_key = "sk-..."
+
+[language_servers.pylsp]
+enabled = true
+enable_mypy = true
+enable_ruff = true
+```
+
+### Expensive Computation Notebook
+
+```python title="expensive_analysis.py"
+# /// script
+# [tool.marimo.runtime]
+# auto_instantiate = false      # Don't run on open
+# on_cell_change = "lazy"       # Manual execution control
+# ///
+
+import marimo as mo
+```
+
+## Troubleshooting
+
+<Accordion title="Settings not taking effect">
+
+**Check configuration precedence:**
+
+1. Script metadata overrides everything
+2. Project `pyproject.toml` overrides user config
+3. User `marimo.toml` is the base
+
+**Verify which config is active:**
+
+```bash
+marimo config show
+```
+
+Look for the config file path and current settings.
+
+</Accordion>
+
+<Accordion title="Can't change settings in UI">
+
+If settings are grayed out in the UI, they're overridden in `pyproject.toml` or script metadata. Edit those files directly:
+
+```bash
+# Find project config
+find . -name "pyproject.toml"
+
+# Edit it
+$EDITOR pyproject.toml
+```
+
+</Accordion>
+
+<Accordion title="Vim mode not working">
+
+Ensure vim preset is set:
+
+```toml
+[keymap]
+preset = "vim"
+```
+
+If using a vimrc file, ensure the path is correct:
+
+```bash
+# In pyproject.toml, paths are relative to the file
+[tool.marimo.keymap]
+vimrc = "configs/.vimrc"  # project_root/configs/.vimrc
+
+# In marimo.toml, use absolute paths
+[keymap]
+vimrc = "/home/user/.vimrc"
+```
+
+</Accordion>
+
+<Accordion title="Python path not working">
+
+Verify `pythonpath` is set correctly:
+
+```toml title="pyproject.toml"
+[tool.marimo.runtime]
+pythonpath = ["src", "lib"]  # Relative to pyproject.toml location
+```
+
+Test in a cell:
+
+```python
+import sys
+print(sys.path)  # Should include your directories
+```
+
+</Accordion>
+
+## Best Practices
+
+<Accordion title="✅ Version control configuration">
+
+**Do commit:**
+- `pyproject.toml` - Shared project settings
+- Script metadata in notebooks - Notebook-specific config
+
+**Don't commit:**
+- `~/.config/marimo/marimo.toml` - Personal settings
+- API keys (use environment variables instead)
+
+</Accordion>
+
+<Accordion title="✅ Share team settings">
+
+Use `pyproject.toml` to ensure consistent behavior:
+
+```toml title="pyproject.toml"
+[tool.marimo.formatting]
+line_length = 88
+
+[tool.marimo.package_management]
+manager = "uv"
+
+[tool.marimo.runtime]
+default_sql_output = "polars"
+```
+
+Commit this file so all team members use the same settings.
+
+</Accordion>
+
+<Accordion title="✅ Use environment variables for secrets">
+
+Don't hardcode API keys in config files:
+
+```toml title=".env"
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+```toml title="pyproject.toml"
+[tool.marimo.runtime]
+dotenv = [".env"]
+```
+
+Add `.env` to `.gitignore`.
+
+</Accordion>
+
+## Related Documentation
+
+- [Runtime Configuration](guides/configuration/runtime_configuration.md) - Detailed runtime settings
+- [LLM Providers](guides/configuration/llm_providers.md) - AI provider configuration
+- [Keyboard Shortcuts](keyboard-shortcuts.mdx) - Customizing keybindings
+- [Code Completion](code-completion.mdx) - Completion configuration
+- [Language Server Protocol](guides/editor_features/language_server.md) - LSP configuration

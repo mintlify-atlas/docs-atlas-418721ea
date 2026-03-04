@@ -1,0 +1,225 @@
+---
+title: 'marimo edit'
+description: 'Create or edit marimo notebooks in an interactive editor'
+---
+
+# marimo edit
+
+Create or edit marimo notebooks in an interactive editor with a web-based interface.
+
+## Usage
+
+```bash
+marimo edit [NAME] [OPTIONS] [-- ARGS...]
+```
+
+## Arguments
+
+**NAME** - Path to the notebook file or directory to edit (optional)
+- If a file path is provided, opens that specific notebook
+- If a directory path is provided, opens a file browser for that directory
+- If omitted, opens the current working directory
+- Supports URLs for remote notebooks
+- Supports piping: `cat notebook.py | marimo edit`
+
+**ARGS** - Arguments to pass to the notebook (after `--`)
+- All arguments after `--` are passed to the notebook's `sys.argv`
+
+## Options
+
+### Server Configuration
+
+**-p, --port PORT** - Port to attach to
+- Type: Integer
+- Default: Auto-assigned
+
+**--host HOST** - Host to attach to
+- Type: String
+- Default: `127.0.0.1`
+
+**--proxy PROXY** - Address of reverse proxy
+- Type: String
+
+**--base-url URL** - Base URL for the server (should start with `/`)
+- Type: String
+- Default: `""`
+
+### Browser & UI
+
+**--headless** - Don't launch a browser
+- Type: Flag
+- Default: `False`
+
+### Authentication
+
+**--token / --no-token** - Use token for authentication
+- Type: Flag
+- Default: `True`
+- Enables session-based authentication with a random token
+
+**--token-password PASSWORD** - Use a specific token for authentication
+- Type: String
+- If not set, a random token will be generated
+
+**--token-password-file FILE** - Path to file containing token password, or `-` for stdin
+- Type: String
+- Mutually exclusive with `--token-password`
+
+### Security & CORS
+
+**--allow-origins ORIGIN** - Allowed origins for CORS
+- Type: String (can be repeated)
+- Use `*` for all origins
+- Example: `--allow-origins https://example.com --allow-origins https://other.com`
+
+**--trusted / --untrusted** - Run notebooks hosted remotely
+- If `--untrusted`, runs marimo in a Docker container
+- Default: Prompt if remote notebook detected
+
+### Development Features
+
+**--watch** - Watch the file for changes and reload when saved in another editor
+- Type: Flag
+- Default: `False`
+
+**--skew-protection / --no-skew-protection** - Enable skew protection middleware
+- Type: Flag
+- Default: `True`
+- Prevents version mismatch issues between client and server
+
+**--skip-update-check** - Don't check if a new version is available
+- Type: Flag
+- Default: `False`
+
+### Sandbox & Isolation
+
+**--sandbox / --no-sandbox** - Run in an isolated virtual environment
+- Type: Flag
+- Dependencies tracked via PEP 723 inline metadata
+- Requires `uv`
+
+### Session Management
+
+**--timeout MINUTES** - Global timeout to shut down server after specified minutes of no connection
+- Type: Float
+
+**--session-ttl SECONDS** - Seconds to wait before closing a session on websocket disconnect
+- Type: Integer
+- If `None`, sessions are not automatically closed
+
+## Examples
+
+### Basic Usage
+
+```bash
+# Create a new notebook in current directory
+marimo edit
+
+# Create or edit a specific notebook
+marimo edit notebook.py
+
+# Edit all notebooks in a directory
+marimo edit notebooks/
+```
+
+### Custom Server Configuration
+
+```bash
+# Run on a specific port
+marimo edit notebook.py --port 8080
+
+# Run on all network interfaces
+marimo edit notebook.py --host 0.0.0.0
+
+# Run headless (no browser)
+marimo edit notebook.py --headless
+```
+
+### Authentication
+
+```bash
+# Disable token authentication
+marimo edit notebook.py --no-token
+
+# Use a specific token
+marimo edit notebook.py --token-password mysecrettoken
+
+# Read token from file
+marimo edit notebook.py --token-password-file ~/.marimo-token
+```
+
+### Development Workflow
+
+```bash
+# Watch for external changes
+marimo edit notebook.py --watch
+
+# Run in sandbox mode with isolated dependencies
+marimo edit notebook.py --sandbox
+```
+
+### Remote Notebooks
+
+```bash
+# Edit a remote notebook (will prompt for trust)
+marimo edit https://raw.githubusercontent.com/user/repo/main/notebook.py
+
+# Trust remote notebooks automatically
+marimo edit https://example.com/notebook.py --trusted
+```
+
+### Passing Arguments to Notebook
+
+```bash
+# Pass command-line arguments to the notebook
+marimo edit app.py -- --input data.csv --output results.json
+```
+
+Inside `app.py`, access arguments via `sys.argv`:
+
+```python
+import sys
+import marimo as mo
+
+# sys.argv[1] will be '--input'
+# sys.argv[2] will be 'data.csv'
+# etc.
+```
+
+### Using with Reverse Proxy
+
+```bash
+# Serve under a subpath
+marimo edit notebook.py --base-url /notebooks
+
+# With reverse proxy
+marimo edit notebook.py --proxy https://example.com
+```
+
+### CORS Configuration
+
+```bash
+# Allow specific origins
+marimo edit notebook.py --allow-origins https://example.com
+
+# Allow all origins (use with caution)
+marimo edit notebook.py --allow-origins '*'
+```
+
+## Piping Input
+
+On Unix-like systems, you can pipe notebook content:
+
+```bash
+# Pipe a notebook into marimo edit
+cat notebook.py | marimo edit
+
+# Edit output from a command
+echo 'import marimo as mo' | marimo edit
+```
+
+## Related Commands
+
+- [marimo run](/cli/run) - Run a notebook in read-only mode
+- [marimo new](#) - Create a new notebook with AI
+- [marimo tutorial](/cli/tutorial) - Open a tutorial

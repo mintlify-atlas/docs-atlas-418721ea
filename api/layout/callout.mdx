@@ -1,0 +1,66 @@
+---
+title: callout
+---
+
+Build a callout output.
+
+## Usage
+
+```python
+mo.callout("This is a neutral callout", kind="neutral")
+```
+
+```python
+mo.callout("Success!", kind="success")
+```
+
+```python
+mo.callout("Warning: Be careful", kind="warn")
+```
+
+```python
+mo.callout("Error occurred", kind="danger")
+```
+
+You can also use the `.callout()` method on `Html` objects:
+
+```python
+mo.md("Hooray, you did it!").callout(kind="success")
+```
+
+```python
+mo.md("It's dangerous to go alone!").callout(kind="warn")
+```
+
+## Signature
+
+```python
+mo.callout(
+    value: object,
+    kind: Literal["neutral", "warn", "success", "info", "danger"] = "neutral"
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="value" type="object" required>
+  A value to render in the callout.
+</ParamField>
+
+<ParamField path="kind" type="Literal['neutral', 'warn', 'success', 'info', 'danger']" default="'neutral'">
+  The kind of callout (affects styling).
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An HTML object.
+</ParamField>
+
+## Callout Kinds
+
+- `neutral`: Default styling for general information
+- `info`: Blue styling for informational messages
+- `success`: Green styling for success messages
+- `warn`: Yellow/orange styling for warnings
+- `danger`: Red styling for errors or critical information

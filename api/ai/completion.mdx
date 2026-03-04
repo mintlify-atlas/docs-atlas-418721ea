@@ -1,0 +1,88 @@
+---
+title: ChatModelConfig
+---
+
+Configuration for chat models.
+
+## Usage
+
+```python
+import marimo as mo
+
+# Create a basic configuration
+config = mo.ai.ChatModelConfig(
+    max_tokens=1000,
+    temperature=0.7
+)
+```
+
+```python
+# Create a configuration with all parameters
+config = mo.ai.ChatModelConfig(
+    max_tokens=2000,
+    temperature=0.8,
+    top_p=0.9,
+    top_k=50,
+    frequency_penalty=0.5,
+    presence_penalty=0.5
+)
+```
+
+## Signature
+
+```python
+mo.ai.ChatModelConfig(
+    max_tokens: Optional[int] = None,
+    temperature: Optional[float] = None,
+    top_p: Optional[float] = None,
+    top_k: Optional[int] = None,
+    frequency_penalty: Optional[float] = None,
+    presence_penalty: Optional[float] = None
+)
+```
+
+## Parameters
+
+<ParamField path="max_tokens" type="Optional[int]" default="None">
+  Maximum number of tokens to generate.
+</ParamField>
+
+<ParamField path="temperature" type="Optional[float]" default="None">
+  Temperature for the model (randomness). Higher values make the output more random, lower values make it more deterministic.
+</ParamField>
+
+<ParamField path="top_p" type="Optional[float]" default="None">
+  Restriction on the cumulative probability of prediction candidates. Also known as nucleus sampling.
+</ParamField>
+
+<ParamField path="top_k" type="Optional[int]" default="None">
+  Number of top prediction candidates to consider.
+</ParamField>
+
+<ParamField path="frequency_penalty" type="Optional[float]" default="None">
+  Penalty for tokens which appear frequently. Positive values decrease the likelihood of repeating tokens based on their frequency in the text so far.
+</ParamField>
+
+<ParamField path="presence_penalty" type="Optional[float]" default="None">
+  Penalty for tokens which already appeared at least once. Positive values encourage the model to use new tokens.
+</ParamField>
+
+## Usage with LLM Providers
+
+This configuration is typically used with LLM provider functions:
+
+```python
+import marimo as mo
+
+config = mo.ai.ChatModelConfig(
+    max_tokens=1000,
+    temperature=0.7
+)
+
+messages = [
+    mo.ai.ChatMessage(role="user", content="Hello!", id="1")
+]
+
+# Use with a provider (example)
+# response = mo.ai.llm.openai(messages, config)
+```

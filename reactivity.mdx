@@ -1,0 +1,203 @@
+---
+title: Reactivity
+description: Learn how marimo's reactive execution model automatically runs dependent cells, keeping your code and outputs consistent.
+---
+
+# Reactivity
+
+marimo **reacts** to your code changes: run a cell, and all other cells that reference the variables it defines are automatically run with the latest data. This keeps your code and outputs consistent, and eliminates bugs before they happen.
+
+<Note>
+  Reactivity is one of the biggest differences between marimo and traditional notebooks like Jupyter. It eliminates hidden state and provides a deterministic execution order.
+</Note>
+
+## How Reactivity Works
+
+marimo statically analyzes each cell to determine:
+
+- **References**: The global variables it reads but doesn't define
+- **Definitions**: The global variables it defines
+
+It then forms a **directed acyclic graph (DAG)** on cells, with an edge from one cell to another if the latter references any of the definitions of the former.
+
+<Steps>
+  <Step title="Write code in a cell">
+    Define a variable in a cell:
+    
+    ```python
+    x = mo.ui.slider(1, 9)
+    x
+    ```
+  </Step>
+  
+  <Step title="Reference it in another cell">
+    Reference that variable in another cell:
+    
+    ```python
+    mo.md(f"$e^{x.value} = {math.exp(x.value):0.3f}$")
+    ```
+  </Step>
+  
+  <Step title="Automatic updates">
+    When you interact with the slider, marimo automatically re-runs the markdown cell with the new value!
+  </Step>
+</Steps>
+
+<Warning>
+  **Runtime Rule**: When a cell is run, marimo automatically runs all other cells that **reference** any of the global variables it **defines**.
+</Warning>
+
+## Execution Order
+
+The order cells are executed in is determined by the relationships between cells and their variables, **not by the order of cells on the page** (similar to a spreadsheet).
+
+This lets you organize your code in whatever way makes the most sense to you. For example, you can put helper functions at the bottom of your notebook.
+
+```python
+# Cell 1: Use the function
+result = process_data(df)
+mo.ui.table(result)
+```
+
+```python
+# Cell 2: Define the function (can be at the bottom)
+def process_data(data):
+    return data.groupby('category').sum()
+```
+
+## Global Variable Names Must Be Unique
+
+**marimo requires that every global variable be defined by only one cell.** This lets marimo keep code and outputs consistent.
+
+<Tip>
+  A variable can refer to any Python object. Functions, classes, and imported names are all variables.
+</Tip>
+
+### Creating Local Variables
+
+Variables prefixed with an underscore (e.g., `_x`) are "local" to a cell: they can't be read by other cells. Multiple cells can reuse the same local variable names.
+
+```python
+# Cell 1
+_temp = process_step_1(data)
+result_1 = finalize(_temp)
+```
+
+```python
+# Cell 2 - can reuse _temp
+_temp = process_step_2(data)
+result_2 = finalize(_temp)
+```
+
+### Encapsulating Code in Functions
+
+If you want most or all the variables in a cell to be temporary, encapsulate them in a function:
+
+```python
+def _():
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    ax.plot([1, 2])
+    return ax
+
+_()
+```
+
+Here, the variables `plt`, `fig`, and `ax` aren't added to the globals.
+
+## Variable Mutations Are Not Tracked
+
+marimo does not track mutations to objects. Mutations like `my_list.append(42)` or `my_object.value = 42` don't trigger reactive re-runs of other cells.
+
+<Warning>
+  **Avoid defining a variable in one cell and mutating it in another.**
+</Warning>
+
+<CodeGroup>
+```python Do this
+# Cell 1
+l = [1]
+```
+
+```python Cell 2
+extended_list = l + [2]
+```
+</CodeGroup>
+
+<CodeGroup>
+```python Don't do this
+# Cell 1
+l = [1]
+```
+
+```python Cell 2 - WRONG!
+l.append(2)  # Won't trigger reactivity!
+```
+</CodeGroup>
+
+### Why Not Track Mutations?
+
+Tracking mutations reliably is impossible in Python. Reacting to mutations could result in surprising re-runs of notebook cells.
+
+If you need to mutate a variable (such as adding a new column to a dataframe), perform the mutation in the same cell as the one that defines it:
+
+```python
+# Good: mutation in the same cell as definition
+df = pd.DataFrame({"my_column": [1, 2]})
+df["another_column"] = [3, 4]
+```
+
+## Deleting Cells Deletes Variables
+
+In marimo, **deleting a cell deletes its global variables from program memory**. Cells that previously referenced these variables are automatically re-run and invalidated.
+
+This eliminates a common cause of bugs in traditional notebooks like Jupyter.
+
+## Lazy Mode for Expensive Notebooks
+
+For notebooks where cells might take a long time to run or have side-effects, you can configure the runtime to be **lazy** instead of automatic.
+
+<Accordion title="Working with expensive notebooks">
+  marimo provides several tools for working with expensive notebooks:
+  
+  - Configure the runtime to be **lazy**, marking cells as stale instead of running them automatically
+  - Use `mo.stop()` to conditionally stop execution at runtime
+  - Disable specific cells to prevent them from running
+  
+  Access runtime configuration through the notebook settings menu.
+</Accordion>
+
+### Disabling Cells
+
+You can **disable** cells to block them and their dependents from running. This is useful when you want to edit one part of a notebook without triggering automatic execution of expensive dependent cells.
+
+When you re-enable a cell, if any of the cell's ancestors ran while it was disabled, marimo will automatically run it.
+
+## Visualizing the Dependency Graph
+
+marimo provides several tools to help you understand and navigate the dependency graph:
+
+<CardGroup cols={3}>
+  <Card title="Graph View" icon="diagram-project">
+    Visualize the complete dependency graph of your notebook
+  </Card>
+  <Card title="Minimap" icon="map">
+    See a bird's-eye view of your notebook structure
+  </Card>
+  <Card title="Reference Highlighting" icon="highlighter">
+    Automatically highlights related cells as you navigate
+  </Card>
+</CardGroup>
+
+## Runtime Configuration
+
+Through the notebook settings menu, you can configure:
+
+- **Autorun on startup**: Whether to run cells automatically when opening the notebook
+- **Autorun on cell execution**: Whether to run dependent cells automatically
+- **Module autoreloader**: Automatically reload imported modules when they change
+- **Lazy execution**: Mark cells as stale instead of running them automatically
+
+<Tip>
+  The runtime configuration allows you to balance between automatic updates and manual control, depending on your workflow.
+</Tip>

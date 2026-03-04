@@ -1,0 +1,377 @@
+---
+title: Debugging
+description: Learn how to debug marimo notebooks using breakpoints, pdb, error inspection, and AI-powered debugging assistance.
+---
+
+marimo provides comprehensive debugging tools to help you identify and fix issues in your notebooks. From interactive breakpoints to AI-powered error analysis, marimo makes debugging Python code efficient and intuitive.
+
+## Interactive Debugging with pdb
+
+marimo fully supports Python's built-in debugger (pdb), allowing you to set breakpoints, inspect variables, and step through code execution.
+
+### Setting Breakpoints
+
+Use the `breakpoint()` function to pause execution and enter the debugger:
+
+```python
+import marimo as mo
+
+@mo.cell
+def calculate_triangle_numbers():
+    triangle = 0
+    triangle_count = 20
+    for i in range(1, triangle_count):
+        triangle += i
+        # Debug at the 10th iteration
+        if i == 10:
+            breakpoint()  # Execution pauses here
+    return triangle
+```
+
+When execution reaches `breakpoint()`, marimo enters an interactive debugging session in your terminal where you can:
+
+- Inspect variable values with `p variable_name`
+- Step through code with `n` (next) or `s` (step into)
+- Continue execution with `c`
+- Quit the debugger with `q`
+- See all commands with `help`
+
+<Note>
+**The debugger blocks execution**: While the debugger is active, you cannot execute other cells. Remember to continue (`c`) or quit (`q`) the debugger to resume normal operation.
+</Note>
+
+### Breakpoints from Stack Traces
+
+When a cell raises an exception, marimo displays a detailed stack trace. You can add breakpoints directly from the error output:
+
+1. Click the bug icon (🐛) in the stack trace
+2. marimo adds a `breakpoint()` at that location
+3. Re-run the cell to enter the debugger at the error point
+
+<video muted controls playsinline width="100%" align="center" src="/_static/docs-pdb-breakpoint.webm">
+</video>
+
+Clicking the cell link in the stack trace takes you directly to the cell where the error occurred.
+
+## Postmortem Debugging
+
+When your code raises an exception, marimo offers postmortem debugging to inspect the program state at the point of failure.
+
+**To use postmortem debugging:**
+
+1. Run a cell that raises an exception
+2. Click the **"Launch debugger"** button in the error output
+3. Inspect variables and stack frames at the point of the error
+
+<video muted controls playsinline width="100%" align="center" src="/_static/docs-postmortem-debugging.webm">
+</video>
+
+This is particularly useful for understanding why an exception occurred without modifying your code to add breakpoints.
+
+## Error Messages and Inspection
+
+marimo provides rich, detailed error messages to help you quickly identify issues.
+
+### Stack Traces
+
+When a cell throws an error, marimo displays:
+
+- **Exception type and message**: Clear description of what went wrong
+- **Full stack trace**: Complete path through your code leading to the error
+- **Source code context**: Lines of code surrounding each stack frame
+- **Variable values**: Inspect local variables at each frame level
+- **Cell references**: Direct links to the cells involved in the error
+
+### Variable Inspector
+
+The variable explorer panel shows all variables in your notebook:
+
+1. Open the **Variables panel** from the left sidebar
+2. Browse all defined variables and their values
+3. Expand complex objects to inspect their structure
+4. Click variables to see their full representation
+
+This gives you a live view of your notebook's state, making it easy to spot unexpected values.
+
+<Tip>
+**Filter variables**: Use the search box in the variables panel to quickly find specific variables in large notebooks.
+</Tip>
+
+## Debugging Reactivity Issues
+
+marimo's reactive execution model can sometimes lead to unexpected behavior. Use these tools to debug reactivity:
+
+### Dataflow Graph
+
+Visualize cell dependencies to understand execution order:
+
+1. Click the **dependency graph** icon in the notebook toolbar
+2. See which cells depend on each other
+3. Identify circular dependencies or missing connections
+
+<Accordion title="Common reactivity issues">
+
+**Stale cells**: If cells aren't updating when you expect:
+- Check the dependency graph for broken connections
+- Ensure cells reference variables correctly (not through side effects)
+- Verify cells return the values they create
+
+**Unexpected re-runs**: If cells run when you don't expect:
+- Check which variables the cell references
+- Look for global variable mutations
+- Review the dependency graph for indirect connections
+
+</Accordion>
+
+### Execution Order
+
+Unlike traditional notebooks, marimo executes cells based on dependencies, not position. To debug execution order:
+
+1. Check the **cell run order** indicator (small number on each cell)
+2. Verify dependencies in the dataflow graph
+3. Ensure cells don't depend on execution side effects
+
+See the [reactivity guide](guides/reactivity.md) for more details.
+
+## Debugging as Scripts
+
+Since marimo notebooks are pure Python files, you can debug them using standard Python debugging tools.
+
+### Running with pdb
+
+Run your notebook as a script with the Python debugger:
+
+```bash
+python -m pdb notebook.py
+```
+
+This drops you into pdb before any code executes, allowing you to:
+- Set breakpoints with `b line_number` or `b function_name`
+- Step through cell execution
+- Inspect the full program state
+
+### Running with pytest
+
+Debug test cells using pytest:
+
+```bash
+pytest notebook.py --pdb
+```
+
+This automatically enters the debugger when a test fails, with the `--pdb` flag.
+
+<Note>
+marimo automatically detects and runs test functions in cells when `reactive_tests = true` in your [runtime configuration](guides/configuration/runtime_configuration.md).
+</Note>
+
+## AI-Powered Debugging
+
+marimo integrates AI assistance to help debug errors and understand issues faster.
+
+### Ask AI About Errors
+
+When you encounter an error:
+
+1. Open the **AI chat panel** from the left sidebar
+2. Reference errors using `@Errors` in your prompt
+3. The AI receives full error context including stack traces and variable states
+
+<div align="center">
+<img src="/_static/docs-notebook-errors-context.png" width="740px"/>
+</div>
+
+**Example prompts:**
+
+- `@Errors Why is this TypeError occurring?`
+- `@Errors How can I fix this import error?`
+- `@Errors Explain why these cells aren't updating`
+
+### Best Practices for AI-Assisted Debugging
+
+<Accordion title="Provide context beyond the error">
+
+Help the AI understand your intent:
+
+```
+@Errors I'm trying to merge two dataframes by user_id, but getting
+a KeyError. I recently renamed the column from 'id' to 'user_id' in
+the upstream cell.
+```
+
+Include:
+- What you were trying to accomplish
+- Recent changes you made
+- Related cells that might be involved
+
+</Accordion>
+
+<Accordion title="Ask specific questions">
+
+Instead of generic requests, be specific:
+
+❌ "Why is this broken?"
+
+✅ "Why is this cell not re-running when I update the dataframe in the previous cell?"
+
+✅ "How can I fix this TypeError when calling process_data()?"
+
+✅ "What's causing this performance issue in my groupby operation?"
+
+</Accordion>
+
+<Accordion title="Leverage marimo's debugging tools first">
+
+1. Use the dependency graph to understand cell relationships
+2. Check the variable explorer for unexpected values
+3. Review stack traces for error locations
+4. Then share these insights with the AI for targeted advice
+
+</Accordion>
+
+<Tip>
+AI assistants are particularly helpful for marimo-specific concepts like reactive execution, cell dependencies, and understanding differences from Jupyter notebooks.
+</Tip>
+
+## Debugging Tools
+
+marimo provides several built-in tools to aid debugging:
+
+### Console Output Panel
+
+View all print statements and console output:
+
+1. Open the **Console** panel from the bottom toolbar
+2. See stdout/stderr from all cells
+3. Filter output by cell or search for specific messages
+
+### Cell Status Indicators
+
+Each cell shows its execution status:
+
+- ✅ **Green checkmark**: Successfully executed
+- ⚠️ **Yellow warning**: Cell is stale (needs re-run)
+- ❌ **Red X**: Execution failed with an error
+- ⏳ **Spinner**: Currently executing
+
+### Runtime Configuration
+
+Adjust runtime behavior for easier debugging:
+
+```toml title="pyproject.toml"
+[tool.marimo.runtime]
+on_cell_change = "lazy"      # Don't auto-run dependent cells
+auto_reload = "off"          # Disable module auto-reloading
+execution_type = "strict"    # Stricter execution for catching issues
+```
+
+See [runtime configuration](guides/configuration/runtime_configuration.md) for all options.
+
+## Common Debugging Scenarios
+
+<Accordion title="Debugging import errors">
+
+**Symptom**: Module not found or import errors
+
+**Solutions**:
+1. Check the **Dependencies** panel to see installed packages
+2. Verify the module is installed: Use the package manager panel
+3. Check `sys.path` for Python path issues
+4. Review `pythonpath` setting in runtime configuration
+
+```python
+import sys
+print(sys.path)  # Check if your module path is included
+```
+
+</Accordion>
+
+<Accordion title="Debugging cell dependencies">
+
+**Symptom**: Cells not updating when expected
+
+**Solutions**:
+1. Open the dependency graph to visualize connections
+2. Ensure cells return values they create: `return variable`
+3. Check for hidden state or global mutations
+4. Verify variable names are consistent across cells
+
+</Accordion>
+
+<Accordion title="Debugging performance issues">
+
+**Symptom**: Slow notebook execution
+
+**Solutions**:
+1. Use `%%time` or `%%timeit` to measure cell execution
+2. Check the **execution order** - are cells running more than expected?
+3. Enable lazy execution to prevent automatic re-runs
+4. Profile with `cProfile` or line_profiler
+
+```python
+import cProfile
+cProfile.run('expensive_function()')
+```
+
+</Accordion>
+
+<Accordion title="Debugging data issues">
+
+**Symptom**: Unexpected values or data transformations
+
+**Solutions**:
+1. Use the **variable explorer** to inspect dataframe shapes and types
+2. Add assertions to validate assumptions:
+   ```python
+   assert df.shape[0] > 0, "DataFrame is empty"
+   assert 'user_id' in df.columns, "Missing user_id column"
+   ```
+3. Use `mo.ui.table(df)` to interactively explore data
+4. Add temporary print statements to track data flow
+
+</Accordion>
+
+## Debugging Configuration
+
+### Diagnostics Settings
+
+Enable rich diagnostics from language servers:
+
+```toml title="pyproject.toml"
+[tool.marimo.diagnostics]
+enabled = true        # Show linting and type errors
+sql_linter = true     # Lint SQL cells
+```
+
+### Language Servers for Error Detection
+
+Configure language servers to catch errors before runtime:
+
+```toml title="pyproject.toml"
+[tool.marimo.language_servers.pylsp]
+enabled = true
+enable_mypy = true      # Type checking
+enable_ruff = true      # Fast linting
+```
+
+See the [language server guide](guides/editor_features/language_server.md) for details.
+
+## Troubleshooting Tips
+
+<Tip>
+**Check logs**: marimo logs are stored in `~/.cache/marimo/logs/`. Check these files for detailed error information and server issues.
+</Tip>
+
+<Tip>
+**Restart the kernel**: If you encounter unexplained behavior, try interrupting execution (⏹️ button) or restarting the marimo server.
+</Tip>
+
+<Tip>
+**Use version control**: Git integration helps track when bugs were introduced. Since marimo notebooks are `.py` files, you can use `git diff` and `git blame` effectively.
+</Tip>
+
+## Related Documentation
+
+- [Reactivity Guide](guides/reactivity.md) - Understanding marimo's reactive execution
+- [Error Handling](guides/best_practices.md#error-handling) - Best practices for robust code
+- [AI Completion](guides/editor_features/ai_completion.md) - AI-powered debugging assistance
+- [Testing](guides/testing.md) - Writing and running tests in marimo

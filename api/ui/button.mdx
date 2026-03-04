@@ -1,0 +1,102 @@
+---
+title: 'Button'
+description: 'Create clickable button elements'
+---
+
+# mo.ui.button
+
+Create an interactive button that triggers actions when clicked.
+
+## Signature
+
+```python
+mo.ui.button(
+    value: object = None,
+    *,
+    label: str = "click here",
+    on_click: Callable[[object], object] | None = None,
+    on_change: Callable[[object], None] | None = None,
+    kind: Literal["neutral", "success", "warn", "danger"] = "neutral",
+    disabled: bool = False,
+    tooltip: str | None = None,
+    full_width: bool = False,
+    keyboard_shortcut: str | None = None
+)
+```
+
+## Parameters
+
+<ParamField path="value" type="object" default="None">
+  Initial value associated with the button
+</ParamField>
+
+<ParamField path="label" type="str" default="'click here'">
+  Text displayed on the button
+</ParamField>
+
+<ParamField path="on_click" type="Callable[[object], object]">
+  Callback function called when button is clicked. Return value becomes the button's new value.
+</ParamField>
+
+<ParamField path="on_change" type="Callable[[object], None]">
+  Callback function called when button value changes
+</ParamField>
+
+<ParamField path="kind" type="'neutral' | 'success' | 'warn' | 'danger'" default="'neutral'">
+  Visual style of the button
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether the button is disabled
+</ParamField>
+
+<ParamField path="tooltip" type="str">
+  Tooltip text shown on hover
+</ParamField>
+
+<ParamField path="full_width" type="bool" default="False">
+  Whether button takes full width of container
+</ParamField>
+
+<ParamField path="keyboard_shortcut" type="str">
+  Keyboard shortcut to trigger the button (e.g., "Ctrl+Enter")
+</ParamField>
+
+## Example
+
+```python
+import marimo as mo
+
+# Simple button
+button = mo.ui.button(label="Click me")
+button
+```
+
+```python
+# Button with callback
+count = mo.state(0)
+
+def increment(value):
+    count.set(count() + 1)
+    return count()
+
+button = mo.ui.button(
+    value=0,
+    label=f"Clicked {count()} times",
+    on_click=increment
+)
+```
+
+```python
+# Styled buttons
+mo.hstack([
+    mo.ui.button(label="Neutral", kind="neutral"),
+    mo.ui.button(label="Success", kind="success"),
+    mo.ui.button(label="Warning", kind="warn"),
+    mo.ui.button(label="Danger", kind="danger"),
+])
+```
+
+<Tip>
+Use `on_click` when you want to update the button's value based on clicks. Use `on_change` for side effects.
+</Tip>

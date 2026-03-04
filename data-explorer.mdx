@@ -1,0 +1,376 @@
+---
+title: Data Explorer
+description: Automatically explore and visualize datasets with marimo's data explorer UI
+---
+
+The data explorer provides an interactive way to quickly visualize and understand your datasets with automatically generated charts.
+
+## Overview
+
+`mo.ui.data_explorer()` creates an interactive visualization tool that:
+
+- Suggests appropriate chart types based on your data
+- Allows drag-and-drop encoding of visual channels
+- Updates visualizations in real-time
+- Works with pandas, polars, and other dataframe libraries
+
+## Basic Usage
+
+```python
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({
+    "category": ["A", "B", "C", "A", "B"],
+    "value": [10, 20, 15, 25, 30],
+    "date": pd.date_range("2024-01-01", periods=5),
+    "size": [100, 200, 150, 175, 225]
+})
+
+explorer = mo.ui.data_explorer(df)
+explorer
+```
+
+The data explorer appears with:
+- Chart type selector (bar, line, scatter, etc.)
+- Encoding channels (x, y, color, size, etc.)
+- Interactive preview
+
+## Pre-configured Charts
+
+Start with specific encodings:
+
+```python
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({
+    "month": ["Jan", "Feb", "Mar", "Apr"],
+    "revenue": [100, 150, 120, 180],
+    "expenses": [80, 90, 85, 95],
+    "region": ["North", "North", "South", "South"]
+})
+
+# Start with a pre-configured chart
+explorer = mo.ui.data_explorer(
+    df,
+    x="month",
+    y="revenue",
+    color="region"
+)
+```
+
+## Available Encodings
+
+The data explorer supports multiple visual encodings:
+
+<CardGroup cols={2}>
+
+<Card title="Position" icon="arrows-up-down-left-right">
+- **x** - X-axis position
+- **y** - Y-axis position
+- **row** - Facet by row
+- **column** - Facet by column
+</Card>
+
+<Card title="Marks" icon="palette">
+- **color** - Color encoding
+- **size** - Size of marks
+- **shape** - Shape of points
+</Card>
+
+</CardGroup>
+
+### Example: Multi-dimensional Visualization
+
+```python
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({
+    "x_val": range(20),
+    "y_val": [i**2 for i in range(20)],
+    "category": ["A", "B"] * 10,
+    "size_val": [i*10 for i in range(20)],
+    "shape_val": ["circle", "square", "triangle"] * 6 + ["circle", "square"]
+})
+
+explorer = mo.ui.data_explorer(
+    df,
+    x="x_val",
+    y="y_val",
+    color="category",
+    size="size_val",
+    shape="shape_val"
+)
+```
+
+## Accessing the Chart Specification
+
+Retrieve the chart configuration:
+
+```python
+import marimo as mo
+
+df = pd.DataFrame({
+    "x": [1, 2, 3],
+    "y": [4, 5, 6]
+})
+
+explorer = mo.ui.data_explorer(df, x="x", y="y")
+```
+
+In another cell:
+
+```python
+# Get the current encoding
+encoding = explorer.value
+
+mo.md(f"""
+## Current Chart Configuration
+
+- X-axis: {encoding.get('x', 'None')}
+- Y-axis: {encoding.get('y', 'None')}
+- Color: {encoding.get('color', 'None')}
+""")
+```
+
+## Supported Data Types
+
+The data explorer works with any dataframe library supported by [narwhals](https://narwhals-dev.github.io/narwhals/):
+
+<Tabs>
+
+<Tab title="Pandas">
+
+```python
+import pandas as pd
+import marimo as mo
+
+df = pd.DataFrame({
+    "a": [1, 2, 3],
+    "b": [4, 5, 6]
+})
+
+mo.ui.data_explorer(df)
+```
+
+</Tab>
+
+<Tab title="Polars">
+
+```python
+import polars as pl
+import marimo as mo
+
+df = pl.DataFrame({
+    "a": [1, 2, 3],
+    "b": [4, 5, 6]
+})
+
+mo.ui.data_explorer(df)
+```
+
+</Tab>
+
+<Tab title="PyArrow">
+
+```python
+import pyarrow as pa
+import marimo as mo
+
+table = pa.table({
+    "a": [1, 2, 3],
+    "b": [4, 5, 6]
+})
+
+mo.ui.data_explorer(table)
+```
+
+</Tab>
+
+</Tabs>
+
+## Chart Types
+
+The data explorer automatically suggests appropriate chart types based on your data and selected encodings:
+
+- **Bar charts** - For categorical comparisons
+- **Line charts** - For temporal data
+- **Scatter plots** - For correlations
+- **Histograms** - For distributions
+- **Box plots** - For statistical summaries
+- **Heatmaps** - For matrix data
+
+Users can override the suggested type using the chart type selector in the UI.
+
+## Interactive Features
+
+<Steps>
+
+### Drag and Drop
+
+Drag column names from the data panel to encoding channels (x, y, color, etc.)
+
+### Change Chart Type
+
+Click the chart type selector to switch between visualization types.
+
+### Adjust Encodings
+
+Click on encoding channels to change:
+- Aggregation functions (sum, mean, count, etc.)
+- Data type interpretation (quantitative, temporal, nominal)
+- Binning for continuous variables
+
+### Download Chart
+
+Export visualizations as PNG or SVG.
+
+</Steps>
+
+## Reactive Updates
+
+The data explorer is reactive - when the input dataframe changes, the visualization automatically updates:
+
+```python
+import marimo as mo
+import pandas as pd
+
+# Slider to filter data
+max_value = mo.ui.slider(10, 100, value=50, label="Max Value")
+```
+
+In another cell:
+
+```python
+# Filtered data
+df_filtered = df[df["value"] <= max_value.value]
+
+# Explorer updates when slider changes
+mo.ui.data_explorer(df_filtered, x="category", y="value")
+```
+
+## Combining with Other UI Elements
+
+Create dashboards by combining the data explorer with other components:
+
+```python
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({
+    "product": ["A", "B", "C", "D"],
+    "sales": [100, 200, 150, 300],
+    "region": ["North", "South", "North", "South"]
+})
+
+# Region selector
+region = mo.ui.dropdown(
+    options=["All", "North", "South"],
+    value="All",
+    label="Region"
+)
+```
+
+In another cell:
+
+```python
+# Filter data based on selection
+df_filtered = df if region.value == "All" else df[df["region"] == region.value]
+
+# Display region selector and explorer
+mo.vstack([
+    region,
+    mo.ui.data_explorer(df_filtered, x="product", y="sales")
+])
+```
+
+## Performance Considerations
+
+<Note>
+For large datasets (100k+ rows), the data explorer uses sampling to maintain interactivity.
+</Note>
+
+- Data is automatically sampled for preview
+- Full dataset is used for aggregations
+- Consider pre-aggregating very large datasets
+
+## Under the Hood
+
+The data explorer uses:
+
+- **Vega-Lite** for declarative visualizations
+- **Altair** (via marimo's chart transformer) for efficient rendering
+- **CSV data transformation** for browser compatibility
+
+## Example: Sales Dashboard
+
+```python
+import marimo as mo
+import pandas as pd
+import numpy as np
+
+# Generate sample sales data
+np.random.seed(42)
+dates = pd.date_range("2024-01-01", periods=100)
+df = pd.DataFrame({
+    "date": dates,
+    "revenue": np.random.randint(1000, 5000, 100),
+    "customers": np.random.randint(10, 100, 100),
+    "product": np.random.choice(["Widget", "Gadget", "Tool"], 100),
+    "region": np.random.choice(["North", "South", "East", "West"], 100)
+})
+
+# Interactive explorer
+explorer = mo.ui.data_explorer(
+    df,
+    x="date",
+    y="revenue",
+    color="product"
+)
+
+explorer
+```
+
+Users can now:
+- Switch to different chart types
+- Add faceting by region
+- Change aggregation methods
+- Explore temporal patterns
+
+All without writing any visualization code!
+
+## Comparison with Other Tools
+
+| Feature | Data Explorer | Altair Chart | Plotly |
+|---------|---------------|--------------|--------|
+| No code required | ✓ | ✗ | ✗ |
+| Automatic suggestions | ✓ | ✗ | ✗ |
+| Drag-and-drop | ✓ | ✗ | ✗ |
+| Full customization | Limited | ✓ | ✓ |
+| Export code | ✗ | ✓ | ✓ |
+
+Use the data explorer for quick exploration, then switch to `mo.ui.altair_chart()` or `mo.ui.plotly()` for production visualizations.
+
+## Tips
+
+<Tip>
+**Fast Exploration**: Use the data explorer when you first receive a dataset to understand its structure and relationships.
+</Tip>
+
+<Tip>
+**Prototyping**: Quickly prototype visualizations before writing custom chart code.
+</Tip>
+
+<Tip>
+**Presentations**: Great for interactive demos where the audience can explore data live.
+</Tip>
+
+## Limitations
+
+- Chart customization is limited compared to programmatic approaches
+- Complex visualizations may require `mo.ui.altair_chart()` or `mo.ui.plotly()`
+- No direct access to underlying Vega-Lite specification for modification
+
+For advanced use cases, consider combining the data explorer for initial exploration with custom charts for final presentation.

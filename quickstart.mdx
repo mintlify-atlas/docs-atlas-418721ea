@@ -1,80 +1,313 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with marimo in minutes - from installation to your first interactive notebook
 ---
 
-## Get started in three steps
+# Quickstart
 
-Get your documentation site running locally and make your first customization.
+Get up and running with marimo in minutes. This guide walks you through installation, creating your first notebook, and exploring marimo's core features.
 
-### Step 1: Set up your local environment
+## Installation
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+Install marimo using pip or conda:
+
+<CodeGroup>
+```bash pip
+pip install marimo
+```
+
+```bash conda
+conda install -c conda-forge marimo
+```
+
+```bash recommended
+# Install with recommended optional dependencies
+pip install "marimo[recommended]"
+```
+</CodeGroup>
+
+<Tip>
+  The `recommended` extras include SQL support, AI completion, formatting tools, and more features that enhance your experience.
+</Tip>
+
+## Your first notebook
+
+<Steps>
+  <Step title="Run the interactive tutorial">
+    The fastest way to learn marimo is through the built-in tutorial:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    marimo tutorial intro
+    ```
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    This launches an interactive notebook that teaches you marimo's core concepts.
+  </Step>
+  
+  <Step title="Create a new notebook">
+    Start a new notebook with the `edit` command:
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    marimo edit
+    ```
+    
+    This opens marimo in your browser with an empty notebook.
+  </Step>
+  
+  <Step title="Add your first cell">
+    Click the "+ Code" button to add a cell, then write some Python:
+    
+    ```python
+    import marimo as mo
+    
+    slider = mo.ui.slider(1, 100, value=50)
+    slider
+    ```
+    
+    When you run this cell (Ctrl+Enter or Cmd+Enter), you'll see an interactive slider.
+  </Step>
+  
+  <Step title="Create a reactive cell">
+    Add another cell that uses the slider value:
+    
+    ```python
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    x = np.linspace(0, 2 * np.pi, slider.value)
+    y = np.sin(x)
+    
+    plt.plot(x, y)
+    plt.title(f"Sine wave with {slider.value} points")
+    plt.gcf()
+    ```
+    
+    Move the slider and watch the plot update automatically - that's reactivity!
+  </Step>
+  
+  <Step title="Save your notebook">
+    Save your notebook with Ctrl+S (or Cmd+S). You'll be prompted for a filename. marimo saves it as a `.py` file:
+    
+    ```bash
+    # Your notebook is now saved as a Python file
+    marimo edit my_notebook.py
+    ```
+  </Step>
+</Steps>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Core workflows
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+### Creating notebooks
 
-### Step 3: Go live
+Create or edit notebooks with the `edit` command:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+```bash
+# Start a new notebook
+marimo edit
+
+# Edit an existing notebook
+marimo edit notebook.py
+
+# Edit with a specific port
+marimo edit notebook.py --port 3000
+```
+
+### Running as apps
+
+Deploy your notebook as a web app where code is hidden and non-editable:
+
+```bash
+marimo run notebook.py
+```
+
+This is perfect for:
+- Sharing interactive dashboards with colleagues
+- Creating internal tools
+- Publishing data stories
+- Building demos and prototypes
+
+<Note>
+  In app mode, users can interact with UI elements but cannot edit the code. The notebook remains fully reactive.
+</Note>
+
+### Executing as scripts
+
+Run notebooks as command-line scripts:
+
+```bash
+python notebook.py
+```
+
+You can pass arguments:
+
+```python
+import marimo as mo
+
+# Access CLI arguments in your notebook
+args = mo.cli_args()
+print(args)
+```
+
+```bash
+python notebook.py --arg1 value1 --arg2 value2
+```
+
+### Exploring tutorials
+
+marimo includes several built-in tutorials:
+
+```bash
+# List all available tutorials
+marimo tutorial --help
+
+# Run specific tutorials
+marimo tutorial intro      # Introduction to marimo
+marimo tutorial dataflow   # How reactivity works
+marimo tutorial ui         # Interactive UI elements
+marimo tutorial plots      # Data visualization
+marimo tutorial sql        # SQL cells
+marimo tutorial markdown   # Dynamic markdown
+```
+
+## Essential features
+
+### Interactive UI elements
+
+marimo provides 40+ UI components that automatically trigger cell re-execution:
+
+<CodeGroup>
+```python Slider
+import marimo as mo
+
+slider = mo.ui.slider(1, 100, value=50, label="Sample size")
+slider
+```
+
+```python Dropdown
+import marimo as mo
+
+dropdown = mo.ui.dropdown(
+    options=["linear", "polynomial", "exponential"],
+    value="linear",
+    label="Model type"
+)
+dropdown
+```
+
+```python Table
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [25, 30, 35]
+})
+
+table = mo.ui.table(df)
+table
+```
+</CodeGroup>
+
+Access values with `.value`:
+
+```python
+mo.md(f"Selected {slider.value} samples using {dropdown.value} model")
+```
+
+### Dynamic markdown
+
+Create markdown that updates with your data:
+
+```python
+import marimo as mo
+
+name = "marimo"
+count = 42
+
+mo.md(f"""
+# Welcome to {name}!
+
+You have processed **{count}** records.
+
+{"🎉" * min(count, 10)}
+""")
+```
+
+### SQL cells
+
+Query data with native SQL support:
+
+```python
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+```
+
+```sql
+SELECT * FROM df WHERE x > 1
+```
+
+The SQL cell creates a dataframe you can use in Python cells.
+
+### Layouts
+
+Organize outputs with flexible layouts:
+
+<CodeGroup>
+```python Horizontal stack
+import marimo as mo
+
+mo.hstack([plot1, plot2, plot3])
+```
+
+```python Vertical stack
+import marimo as mo
+
+mo.vstack([header, content, footer])
+```
+
+```python Tabs
+import marimo as mo
+
+mo.ui.tabs({
+    "Data": data_table,
+    "Visualization": chart,
+    "Analysis": results
+})
+```
+</CodeGroup>
+
+## Converting from Jupyter
+
+Convert existing Jupyter notebooks to marimo:
+
+```bash
+# Convert to marimo format
+marimo convert notebook.ipynb > notebook.py
+
+# Edit the converted notebook
+marimo edit notebook.py
+```
+
+<Warning>
+  Automatic conversion works well for simple notebooks, but you may need to refactor cells that have hidden state or out-of-order execution dependencies.
+</Warning>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Key concepts" icon="book" href="/key-concepts">
+    Learn about reactivity, cells, and the marimo execution model
+  </Card>
+  
+  <Card title="Installation" icon="download" href="/installation">
+    Explore advanced installation options and optional dependencies
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Getting help
+
+- Browse the [examples gallery](https://marimo.io/gallery) for inspiration
+- Join the [Discord community](https://marimo.io/discord) for support
+- Check the [FAQ](https://docs.marimo.io/faq.html) for common questions
+- Watch [YouTube tutorials](https://www.youtube.com/@marimo-team) for video guides

@@ -1,0 +1,63 @@
+---
+title: 'Checkbox'
+description: 'Boolean checkbox input'
+---
+
+# mo.ui.checkbox
+
+Create a checkbox for boolean input.
+
+## Signature
+
+```python
+mo.ui.checkbox(
+    value: bool = False,
+    *,
+    label: str = "",
+    disabled: bool = False,
+    on_change: Callable[[bool], None] | None = None
+)
+```
+
+## Parameters
+
+<ParamField path="value" type="bool" default="False">
+  Initial checked state
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the checkbox
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether the checkbox is disabled
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+
+# Basic checkbox
+agree = mo.ui.checkbox(label="I agree to the terms")
+agree
+```
+
+```python
+# Use the value
+if agree.value:
+    mo.md("Thank you for agreeing!")
+```
+
+```python
+# Multiple checkboxes
+options = mo.md(
+    f"""
+    Select your preferences:
+    
+    {mo.ui.checkbox(label="Email notifications")}
+    {mo.ui.checkbox(label="SMS alerts")}
+    {mo.ui.checkbox(label="Newsletter")}
+    """
+)
+```

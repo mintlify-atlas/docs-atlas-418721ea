@@ -1,0 +1,435 @@
+---
+title: SQL Queries
+description: Execute SQL queries directly in marimo notebooks with support for DuckDB, PostgreSQL, SQLite, and other database engines.
+---
+
+# SQL Queries
+
+marimo provides first-class support for SQL through the `mo.sql()` function. Query dataframes, databases, and data warehouses directly in your notebooks with automatic result visualization.
+
+<Note>
+  SQL cells in marimo are reactive. When data changes, dependent SQL queries automatically re-run.
+</Note>
+
+## Quick Start
+
+The simplest way to use SQL in marimo is with the default DuckDB engine:
+
+```python
+import marimo as mo
+
+result = mo.sql(
+    """
+    SELECT * FROM 'https://datasets.marimo.app/cars.csv'
+    WHERE MPG_City > 30
+    """
+)
+```
+
+The result is automatically displayed as an interactive table and returned as a dataframe.
+
+## Default Engine: DuckDB
+
+By default, `mo.sql()` uses **DuckDB** to execute queries. DuckDB is a fast, in-memory analytical database that's perfect for data analysis.
+
+<Accordion title="Why DuckDB?">
+  DuckDB is:
+  - **Fast**: Optimized for analytical queries
+  - **Convenient**: Runs in-process, no server needed
+  - **Flexible**: Can query CSV, Parquet, JSON files directly
+  - **Compatible**: Works with pandas and polars dataframes
+</Accordion>
+
+### Querying DataFrames
+
+Any dataframes in your notebook's global namespace can be queried directly:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [25, 30, 35],
+    "city": ["NYC", "SF", "LA"]
+})
+```
+
+```python
+result = mo.sql(
+    """
+    SELECT name, age 
+    FROM df 
+    WHERE age > 25
+    ORDER BY age DESC
+    """
+)
+```
+
+<Tip>
+  Reference dataframe variables by name in your SQL queries. DuckDB automatically recognizes them!
+</Tip>
+
+### Querying Files
+
+DuckDB can read from various file formats directly:
+
+```python
+# Query CSV files
+cars = mo.sql(
+    """
+    CREATE OR REPLACE TABLE cars AS
+    FROM 'https://datasets.marimo.app/cars.csv';
+    
+    SELECT Make, Model, Cylinders, Weight, MPG_City 
+    FROM cars
+    WHERE Cylinders >= 6;
+    """
+)
+```
+
+```python
+# Query Parquet files
+parquet_data = mo.sql(
+    """
+    SELECT * FROM 'data.parquet'
+    WHERE value > 100
+    """
+)
+```
+
+```python
+# Query JSON files
+json_data = mo.sql(
+    """
+    SELECT * FROM 'data.json'
+    LIMIT 10
+    """
+)
+```
+
+### Creating Tables
+
+Create persistent tables within your notebook session:
+
+```python
+mo.sql(
+    """
+    CREATE TABLE users AS
+    SELECT * FROM 'users.csv'
+    """
+)
+```
+
+```python
+# Query the created table
+active_users = mo.sql(
+    """
+    SELECT * FROM users
+    WHERE status = 'active'
+    """
+)
+```
+
+## Working with Results
+
+SQL query results are returned as dataframes that you can use in Python:
+
+```python
+cars = mo.sql(
+    """
+    SELECT Make, Model, MPG_City 
+    FROM 'https://datasets.marimo.app/cars.csv'
+    """
+)
+```
+
+```python
+# Use the result as a dataframe in Python
+average_mpg = cars["MPG_City"].mean()
+mo.md(f"Average MPG: **{average_mpg:.2f}**")
+```
+
+```python
+# Get result length
+mo.md(f"Found {len(cars)} cars")
+```
+
+<CodeGroup>
+```python Pandas Output
+# Result is a pandas DataFrame by default
+type(cars)  # pandas.DataFrame
+```
+
+```python Polars Output
+# Configure to return polars DataFrames
+# (set in notebook configuration)
+type(cars)  # polars.DataFrame
+```
+</CodeGroup>
+
+## Custom Database Engines
+
+You can use `mo.sql()` with custom database connections for PostgreSQL, SQLite, MySQL, and more.
+
+### SQLAlchemy Connections
+
+Connect to any database supported by SQLAlchemy:
+
+```python
+from sqlalchemy import create_engine
+
+# PostgreSQL
+engine = create_engine("postgresql://user:password@localhost/mydb")
+
+result = mo.sql(
+    "SELECT * FROM users WHERE age > 21",
+    engine=engine
+)
+```
+
+```python
+# SQLite
+engine = create_engine("sqlite:///mydata.db")
+
+result = mo.sql(
+    "SELECT * FROM products",
+    engine=engine
+)
+```
+
+### DB-API 2.0 Connections
+
+Use any DB-API 2.0 compatible connection:
+
+```python
+import sqlite3
+
+conn = sqlite3.connect("mydata.db")
+
+result = mo.sql(
+    "SELECT * FROM customers",
+    engine=conn
+)
+```
+
+### ADBC Drivers
+
+marimo supports ADBC (Arrow Database Connectivity) drivers for high-performance database access:
+
+```python
+import adbc_driver_postgresql.dbapi as pg_dbapi
+
+conn = pg_dbapi.connect(
+    "postgresql://user:password@localhost/mydb"
+)
+
+result = mo.sql(
+    "SELECT * FROM large_table",
+    engine=conn
+)
+```
+
+## Supported Engines
+
+marimo supports a wide variety of database engines:
+
+<CardGroup cols={2}>
+  <Card title="DuckDB" icon="duck">
+    Default engine, perfect for analytics
+  </Card>
+  <Card title="PostgreSQL" icon="database">
+    Via SQLAlchemy or ADBC
+  </Card>
+  <Card title="SQLite" icon="hard-drive">
+    Via SQLAlchemy or sqlite3
+  </Card>
+  <Card title="MySQL" icon="database">
+    Via SQLAlchemy
+  </Card>
+  <Card title="ClickHouse" icon="chart-line">
+    High-performance analytics
+  </Card>
+  <Card title="Redshift" icon="aws">
+    AWS data warehouse
+  </Card>
+  <Card title="Ibis" icon="bird">
+    Portable Python dataframe API
+  </Card>
+  <Card title="ADBC Drivers" icon="arrow">
+    Arrow-native database connectivity
+  </Card>
+</CardGroup>
+
+## Output Control
+
+Control whether query results are displayed:
+
+```python
+# Display result (default)
+result = mo.sql(
+    "SELECT * FROM users",
+    output=True
+)
+```
+
+```python
+# Don't display, just return the dataframe
+result = mo.sql(
+    "SELECT * FROM users",
+    output=False
+)
+```
+
+## Result Limits
+
+Control the number of rows displayed using environment variables:
+
+```bash
+# Set default result limit
+export MARIMO_SQL_DEFAULT_LIMIT=1000
+```
+
+```python
+# Or use LIMIT in your query
+result = mo.sql(
+    """
+    SELECT * FROM large_table
+    LIMIT 100
+    """
+)
+```
+
+<Warning>
+  When no LIMIT is specified and `MARIMO_SQL_DEFAULT_LIMIT` is set, marimo automatically applies the limit to prevent loading too much data into memory.
+</Warning>
+
+## EXPLAIN Queries
+
+Use EXPLAIN to understand query execution:
+
+```python
+mo.sql(
+    """
+    EXPLAIN
+    SELECT * FROM users
+    WHERE age > 21
+    """
+)
+```
+
+DuckDB EXPLAIN output is displayed in a formatted, readable way.
+
+## Advanced Examples
+
+### Joining Multiple DataFrames
+
+```python
+import pandas as pd
+
+users = pd.DataFrame({
+    "id": [1, 2, 3],
+    "name": ["Alice", "Bob", "Charlie"]
+})
+
+orders = pd.DataFrame({
+    "user_id": [1, 1, 2, 3],
+    "amount": [100, 200, 150, 300]
+})
+```
+
+```python
+result = mo.sql(
+    """
+    SELECT 
+        u.name,
+        COUNT(o.user_id) as order_count,
+        SUM(o.amount) as total_amount
+    FROM users u
+    LEFT JOIN orders o ON u.id = o.user_id
+    GROUP BY u.name
+    ORDER BY total_amount DESC
+    """
+)
+```
+
+### Window Functions
+
+```python
+ranked = mo.sql(
+    """
+    SELECT 
+        name,
+        department,
+        salary,
+        RANK() OVER (PARTITION BY department ORDER BY salary DESC) as rank
+    FROM employees
+    """
+)
+```
+
+### Common Table Expressions (CTEs)
+
+```python
+result = mo.sql(
+    """
+    WITH high_value_customers AS (
+        SELECT user_id, SUM(amount) as total
+        FROM orders
+        GROUP BY user_id
+        HAVING total > 1000
+    )
+    SELECT u.name, c.total
+    FROM users u
+    JOIN high_value_customers c ON u.id = c.user_id
+    ORDER BY c.total DESC
+    """
+)
+```
+
+### Reading from URLs
+
+```python
+# Read CSV from URL
+remote_data = mo.sql(
+    """
+    SELECT * 
+    FROM 'https://example.com/data.csv'
+    WHERE category = 'electronics'
+    """
+)
+```
+
+```python
+# Read Parquet from S3
+s3_data = mo.sql(
+    """
+    SELECT * 
+    FROM 's3://my-bucket/data.parquet'
+    WHERE date >= '2024-01-01'
+    """
+)
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use descriptive variable names">
+    Name your query results clearly to make your notebook readable.
+  </Step>
+  
+  <Step title="Add LIMIT clauses">
+    For large datasets, always include LIMIT to prevent loading too much data.
+  </Step>
+  
+  <Step title="Leverage DuckDB's power">
+    DuckDB can read many file formats directly - use this to avoid unnecessary data loading.
+  </Step>
+  
+  <Step title="Use CTEs for complex queries">
+    Break complex queries into Common Table Expressions for readability.
+  </Step>
+</Steps>
+
+<Tip>
+  SQL queries in marimo are reactive - when input dataframes change, dependent queries automatically re-run!
+</Tip>

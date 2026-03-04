@@ -1,0 +1,447 @@
+---
+title: Interactive Plotting
+description: Create interactive, reactive visualizations with Altair, Plotly, and Matplotlib
+---
+
+marimo makes plots interactive and reactive. Select data in your charts, and marimo automatically updates Python with your selections.
+
+## Supported Libraries
+
+marimo provides first-class support for three major plotting libraries:
+
+- **Altair** - Declarative visualization library based on Vega-Lite
+- **Plotly** - Interactive graphing library  
+- **Matplotlib** - Publication-quality static plots with selection overlay
+
+## Altair Charts
+
+### Basic Usage
+
+```python
+import altair as alt
+import marimo as mo
+from vega_datasets import data
+
+cars = data.cars()
+
+chart = (
+    alt.Chart(cars)
+    .mark_point()
+    .encode(
+        x="Horsepower",
+        y="Miles_per_Gallon",
+        color="Origin",
+    )
+)
+
+altair_chart = mo.ui.altair_chart(chart)
+altair_chart
+```
+
+### Accessing Selected Data
+
+```python
+# In another cell - automatically reactive
+selected_data = altair_chart.value
+
+# selected_data is a dataframe with the selected points
+mo.ui.table(selected_data)
+```
+
+### Selection Types
+
+<Tabs>
+
+<Tab title="Interval Selection">
+
+```python
+# Box/interval selection (default)
+chart = mo.ui.altair_chart(
+    chart,
+    chart_selection="interval"
+)
+```
+
+Drag to select a rectangular region.
+
+</Tab>
+
+<Tab title="Point Selection">
+
+```python
+# Point selection
+chart = mo.ui.altair_chart(
+    chart,
+    chart_selection="point"
+)
+```
+
+Click individual points or shift-click for multiple.
+
+</Tab>
+
+<Tab title="Legend Selection">
+
+```python
+# Enable legend selection
+chart = mo.ui.altair_chart(
+    chart,
+    legend_selection=True  # or list of field names
+)
+```
+
+Click legend items to filter data.
+
+</Tab>
+
+</Tabs>
+
+### Custom Selections
+
+If your chart already has selection parameters, marimo respects them:
+
+```python
+import altair as alt
+import marimo as mo
+
+# Define custom selection
+brush = alt.selection_interval()
+
+chart = (
+    alt.Chart(data)
+    .mark_point()
+    .encode(x="x", y="y", color=alt.condition(brush, "Origin:N", alt.value("gray")))
+    .add_params(brush)
+)
+
+# marimo detects existing selection
+altair_chart = mo.ui.altair_chart(chart)
+```
+
+### Layered Charts
+
+For layered or concatenated charts, use `apply_selection()`:
+
+```python
+import altair as alt
+import marimo as mo
+
+base = alt.Chart(cars)
+
+points = base.mark_point().encode(x="Horsepower", y="Miles_per_Gallon")
+lines = base.mark_line().encode(x="Horsepower", y="mean(Miles_per_Gallon)")
+
+layered = points + lines
+altair_chart = mo.ui.altair_chart(layered)
+```
+
+In another cell:
+
+```python
+# Apply selection to original data
+selected = altair_chart.apply_selection(cars)
+mo.ui.table(selected)
+```
+
+### Chart Composition
+
+marimo's Altair charts support composition operators:
+
+```python
+# Horizontal concatenation
+combined = chart1 | chart2
+
+# Vertical concatenation  
+combined = chart1 & chart2
+
+# Layering
+combined = chart1 + chart2
+```
+
+## Plotly Charts
+
+### Basic Usage
+
+```python
+import plotly.express as px
+import marimo as mo
+from vega_datasets import data
+
+cars = data.cars()
+
+fig = px.scatter(
+    cars,
+    x="Horsepower",
+    y="Miles_per_Gallon",
+    color="Origin"
+)
+
+plotly_chart = mo.ui.plotly(fig)
+plotly_chart
+```
+
+### Selection Data
+
+Plotly selections provide multiple data views:
+
+```python
+# Selected points as list of dicts
+points = plotly_chart.points
+
+# Selection range (for box select)
+ranges = plotly_chart.ranges  # {"x": [min, max], "y": [min, max]}
+
+# Selected point indices
+indices = plotly_chart.indices
+
+# All selection data
+all_data = plotly_chart.value
+```
+
+### Supported Chart Types
+
+<CardGroup cols={2}>
+
+<Card title="Scatter & Line">
+- `scatter`
+- `scattergl` (WebGL)
+- Line charts
+- Area charts
+</Card>
+
+<Card title="Statistical">
+- Bar charts
+- Histograms  
+- Box plots
+- Violin plots
+</Card>
+
+<Card title="Hierarchical">
+- Treemap
+- Sunburst
+- Icicle
+</Card>
+
+<Card title="Specialized">
+- Heatmaps
+- Contour plots
+- Geographic maps
+</Card>
+
+</CardGroup>
+
+### Configuration
+
+```python
+plotly_chart = mo.ui.plotly(
+    fig,
+    config={
+        "displayModeBar": True,
+        "displaylogo": False,
+        "toImageButtonOptions": {
+            "format": "png",
+            "filename": "chart",
+            "height": 500,
+            "width": 700,
+        },
+    },
+)
+```
+
+See [Plotly configuration options](https://plotly.com/javascript/configuration-options/) for all available settings.
+
+### Map Selections
+
+Plotly map traces (scattergeo, scattermapbox) support selection:
+
+```python
+import plotly.express as px
+import marimo as mo
+
+fig = px.scatter_geo(
+    df,
+    lat="latitude",
+    lon="longitude",
+    hover_name="city"
+)
+
+map_chart = mo.ui.plotly(fig)
+```
+
+Selections include `lat`/`lon` coordinates:
+
+```python
+selected = map_chart.points
+# [{"lat": 40.7, "lon": -74.0, ...}, ...]
+```
+
+## Matplotlib Plots
+
+### Interactive Selections
+
+marimo adds interactive selection to static matplotlib plots:
+
+```python
+import matplotlib.pyplot as plt
+import marimo as mo
+import numpy as np
+
+x = np.arange(10)
+y = x**2
+
+plt.scatter(x, y)
+ax = plt.gca()
+
+mpl_chart = mo.ui.matplotlib(ax)
+mpl_chart
+```
+
+### Selection Types
+
+<Steps>
+
+<Step title="Box Selection">
+Click and drag to select a rectangular region.
+</Step>
+
+<Step title="Lasso Selection">  
+Hold **Shift** and drag to draw a freehand selection.
+</Step>
+
+</Steps>
+
+### Using Selection Masks
+
+```python
+import numpy as np
+
+x = np.arange(100)
+y = np.random.randn(100)
+
+# Get boolean mask for selected points
+mask = mpl_chart.value.get_mask(x, y)
+
+# Filter data
+selected_x = x[mask]
+selected_y = y[mask]
+
+mo.md(f"Selected {len(selected_x)} points")
+```
+
+### Selection Objects
+
+The `value` attribute returns different selection types:
+
+```python
+from marimo.ui.matplotlib import BoxSelection, LassoSelection, EmptySelection
+
+selection = mpl_chart.value
+
+if isinstance(selection, BoxSelection):
+    mo.md(f"Box: ({selection.x_min}, {selection.y_min}) to ({selection.x_max}, {selection.y_max})")
+elif isinstance(selection, LassoSelection):
+    mo.md(f"Lasso with {len(selection.vertices)} vertices")
+else:  # EmptySelection
+    mo.md("No selection")
+```
+
+### Debouncing
+
+Control when selections are sent to Python:
+
+```python
+# Only update on mouse-up (default: False)
+mpl_chart = mo.ui.matplotlib(ax, debounce=True)
+```
+
+## Reactive Visualizations
+
+Combine charts with other UI elements for dashboards:
+
+```python
+import altair as alt
+import marimo as mo
+
+# Filter slider
+min_hp = mo.ui.slider(50, 250, value=50, label="Min Horsepower")
+
+# Reactive chart
+chart = (
+    alt.Chart(cars)
+    .mark_point()
+    .encode(x="Horsepower", y="Miles_per_Gallon", color="Origin")
+    .transform_filter(alt.datum.Horsepower >= min_hp.value)
+)
+
+mo.ui.altair_chart(chart)
+```
+
+Whenever `min_hp` changes, the chart automatically updates.
+
+## Performance Tips
+
+<Note>
+For large datasets, consider these optimizations:
+</Note>
+
+- **Altair**: Use `mark_point()` with `size` encoding instead of large markers
+- **Plotly**: Use `scattergl` instead of `scatter` for 10k+ points
+- **Matplotlib**: Selections are computed in JavaScript, so they remain fast
+- **Data transformers**: Altair supports [vegafusion](https://vegafusion.io/) for server-side processing
+
+### VegaFusion
+
+For very large Altair datasets:
+
+```python
+import altair as alt
+
+# Enable vegafusion transformer
+alt.data_transformers.enable('vegafusion')
+
+# Charts now process data server-side
+chart = alt.Chart(large_df).mark_point().encode(x="x", y="y")
+mo.ui.altair_chart(chart)
+```
+
+<Tip>
+marimo automatically detects vegafusion and adjusts chart rendering accordingly.
+</Tip>
+
+## Theming
+
+Charts respect marimo's dark/light mode:
+
+- **Altair**: Backgrounds are automatically transparent
+- **Plotly**: Uses the configured renderer theme
+- **Matplotlib**: Renders with current style settings
+
+## Best Practices
+
+1. **Keep charts reactive** - Store chart objects in variables and reference UI values
+2. **Use appropriate selection types** - Point selection for discrete data, interval for continuous
+3. **Handle empty selections** - Check if data is selected before processing
+4. **Combine with dataframes** - Use `mo.ui.dataframe()` to show selected data in tabular form
+5. **Optimize for size** - Sample or aggregate data before plotting millions of points
+
+## Example: Interactive Dashboard
+
+```python
+import altair as alt
+import marimo as mo
+from vega_datasets import data
+
+cars = data.cars()
+
+# Interactive scatter plot
+scatter = mo.ui.altair_chart(
+    alt.Chart(cars)
+    .mark_point()
+    .encode(x="Horsepower", y="Miles_per_Gallon", color="Origin")
+)
+
+# Display chart and selected data side-by-side
+mo.hstack([scatter, mo.ui.table(scatter.value)])
+```
+
+This creates a fully reactive dashboard where selecting points updates the table automatically.

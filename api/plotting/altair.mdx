@@ -1,0 +1,96 @@
+---
+title: altair_chart
+---
+
+Make reactive charts with Altair.
+
+## Usage
+
+```python
+import altair as alt
+import marimo as mo
+from vega_datasets import data
+
+chart = (
+    alt.Chart(data.cars())
+    .mark_point()
+    .encode(
+        x="Horsepower",
+        y="Miles_per_Gallon",
+        color="Origin",
+    )
+)
+
+chart = mo.ui.altair_chart(chart)
+```
+
+```python
+# View the chart and selected data as a dataframe
+mo.hstack([chart, chart.value])
+```
+
+## Signature
+
+```python
+mo.ui.altair_chart(
+    chart: altair.Chart,
+    chart_selection: Literal["point"] | Literal["interval"] | bool = True,
+    legend_selection: list[str] | bool = True,
+    *,
+    label: str = "",
+    on_change: Optional[Callable[[ChartDataType], None]] = None
+)
+```
+
+## Parameters
+
+<ParamField path="chart" type="altair.Chart" required>
+  An Altair Chart object.
+</ParamField>
+
+<ParamField path="chart_selection" type="Literal['point'] | Literal['interval'] | bool" default="True">
+  Selection type: `"point"`, `"interval"`, or a bool. Defaults to `True` which will automatically detect the best selection type. This is ignored if the chart already has a point/interval selection param.
+</ParamField>
+
+<ParamField path="legend_selection" type="list[str] | bool" default="True">
+  List of legend fields (columns) for which to enable selection, `True` to enable selection for all fields, or `False` to disable selection entirely. This is ignored if the chart already has a legend selection param.
+</ParamField>
+
+<ParamField path="label" type="str" default="">
+  Markdown label for the element.
+</ParamField>
+
+<ParamField path="on_change" type="Optional[Callable[[ChartDataType], None]]" default="None">
+  Optional callback to run when this element's value changes.
+</ParamField>
+
+## Attributes
+
+<ParamField path="value" type="ChartDataType">
+  A dataframe of the plot data filtered by the selections.
+</ParamField>
+
+<ParamField path="dataframe" type="ChartDataType">
+  A dataframe of the unfiltered chart data.
+</ParamField>
+
+<ParamField path="selections" type="ChartSelection">
+  The selection of the chart; this may be an interval along the name of an axis or a selection of points.
+</ParamField>
+
+## Methods
+
+### apply_selection
+
+Apply the selection to a DataFrame.
+
+This method is useful when you have a layered chart and you want to apply the selection to a DataFrame.
+
+```python
+selected_df = chart.apply_selection(cars)
+```
+
+**Parameters:**
+- `df` (ChartDataType): A DataFrame to apply the selection to.
+
+**Returns:** ChartDataType - A DataFrame of the plot data filtered by the selections.

@@ -1,0 +1,84 @@
+---
+title: hstack
+---
+
+Stack items horizontally, in a row.
+
+Combine with `vstack` to build a grid.
+
+## Usage
+
+```python
+# Build a row of items
+mo.hstack([mo.md("..."), mo.ui.text_area()])
+```
+
+```python
+# Build a row of items with equal width
+mo.hstack([mo.md("..."), mo.ui.text_area()], widths="equal")
+```
+
+```python
+# Have one item stretch to fill the available space,
+# while another fits its content
+mo.hstack(
+    [mo.plain_text("..."), mo.ui.text_area(full_width=True)],
+    widths=[0, 1],
+)
+```
+
+```python
+# Build a grid
+mo.hstack(
+    [
+        mo.vstack([mo.md("..."), mo.ui.text_area()]),
+        mo.vstack([mo.ui.checkbox(), mo.ui.text(), mo.ui.date()]),
+    ]
+)
+```
+
+## Signature
+
+```python
+mo.hstack(
+    items: Sequence[object],
+    *,
+    justify: Literal["start", "center", "end", "space-between", "space-around"] = "space-between",
+    align: Optional[Literal["start", "end", "center", "stretch"]] = None,
+    wrap: bool = False,
+    gap: float = 0.5,
+    widths: Optional[Literal["equal"] | Sequence[float]] = None
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="items" type="Sequence[object]" required>
+  A list of items.
+</ParamField>
+
+<ParamField path="justify" type="Literal['start', 'center', 'end', 'space-between', 'space-around']" default="'space-between'">
+  Justify items horizontally: start, center, end, space-between, or space-around.
+</ParamField>
+
+<ParamField path="align" type="Optional[Literal['start', 'end', 'center', 'stretch']]" default="None">
+  Align items vertically: start, end, center, or stretch.
+</ParamField>
+
+<ParamField path="wrap" type="bool" default="False">
+  Wrap items or not.
+</ParamField>
+
+<ParamField path="gap" type="float" default="0.5">
+  Gap between items as a float in rem. 1rem is 16px by default.
+</ParamField>
+
+<ParamField path="widths" type="Optional[Literal['equal'] | Sequence[float]]" default="None">
+  `"equal"` to give items equal width; or a list of relative widths with same length as `items`, e.g., `[1, 2]` means the second item is twice as wide as the first; or `None` for a sensible default.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An Html object.
+</ParamField>

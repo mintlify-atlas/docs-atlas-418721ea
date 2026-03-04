@@ -1,0 +1,219 @@
+---
+title: 'marimo tutorial'
+description: 'Open interactive marimo tutorials to learn the framework'
+---
+
+# marimo tutorial
+
+Open interactive tutorials to learn marimo's features and best practices.
+
+## Usage
+
+```bash
+marimo tutorial NAME [OPTIONS]
+```
+
+## Arguments
+
+**NAME** - Tutorial name (required)
+
+Available tutorials:
+- `intro` - Introduction to marimo
+- `dataflow` - Understanding reactive dataflow
+- `ui` - Interactive UI elements
+- `markdown` - Working with markdown
+- `plots` - Creating plots and visualizations
+- `sql` - SQL cell support
+- `layout` - Layout and organizing notebooks
+- `fileformat` - Understanding marimo's file format
+- `markdown-format` - Markdown notebook format
+- `for-jupyter-users` - Guide for Jupyter users
+
+## Options
+
+**-p, --port PORT** - Port to attach to
+- Type: Integer
+- Default: Auto-assigned
+
+**--host HOST** - Host to attach to
+- Type: String
+- Default: `127.0.0.1`
+
+**--proxy PROXY** - Address of reverse proxy
+- Type: String
+
+**--headless** - Don't launch a browser
+- Type: Flag
+- Default: `False`
+
+**--token / --no-token** - Use token for authentication
+- Type: Flag
+- Default: `True`
+
+**--token-password PASSWORD** - Use a specific token for authentication
+- Type: String
+
+**--token-password-file FILE** - Path to file containing token password, or `-` for stdin
+- Type: String
+
+**--skew-protection / --no-skew-protection** - Enable skew protection middleware
+- Type: Flag
+- Default: `True`
+
+## Recommended Learning Path
+
+Follow this sequence for the best learning experience:
+
+1. **intro** - Start here! Learn the basics of marimo
+2. **dataflow** - Understand reactive execution and dataflow
+3. **ui** - Create interactive UIs with sliders, buttons, and more
+4. **markdown** - Use markdown for rich text and documentation
+5. **plots** - Make interactive plots and visualizations
+6. **sql** - Work with SQL in marimo notebooks
+7. **layout** - Organize your notebook's layout
+8. **fileformat** - Learn about marimo's file structure
+9. **markdown-format** - Use markdown-based notebooks
+10. **for-jupyter-users** - Migration guide if coming from Jupyter
+
+## Examples
+
+### Starting with Basics
+
+```bash
+# Start with the intro tutorial
+marimo tutorial intro
+
+# Learn about reactive dataflow
+marimo tutorial dataflow
+
+# Explore UI components
+marimo tutorial ui
+```
+
+### Custom Server Configuration
+
+```bash
+# Run on a specific port
+marimo tutorial intro --port 8080
+
+# Run headless (no browser)
+marimo tutorial intro --headless
+
+# Run on all network interfaces
+marimo tutorial intro --host 0.0.0.0
+```
+
+### For Jupyter Users
+
+```bash
+# Learn key differences from Jupyter
+marimo tutorial for-jupyter-users
+```
+
+### Advanced Topics
+
+```bash
+# Learn about SQL cells
+marimo tutorial sql
+
+# Understand the file format
+marimo tutorial fileformat
+
+# Master layouts
+marimo tutorial layout
+```
+
+## Tutorial Descriptions
+
+### intro
+A gentle introduction to marimo covering:
+- Creating and running cells
+- Reactive execution
+- Basic UI elements
+- Common patterns
+
+### dataflow
+Deep dive into marimo's reactive dataflow model:
+- How cells automatically re-run
+- Dependency graphs
+- Variable scoping
+- Avoiding common pitfalls
+
+### ui
+Comprehensive guide to UI elements:
+- Sliders, dropdowns, and inputs
+- Forms and layouts
+- Handling user input
+- Building interactive apps
+
+### markdown
+Using markdown in marimo:
+- Markdown cells
+- LaTeX equations
+- Images and media
+- Documentation best practices
+
+### plots
+Creating visualizations:
+- Matplotlib integration
+- Plotly and Altair
+- Interactive plots
+- Plot layouts
+
+### sql
+SQL capabilities in marimo:
+- SQL cells
+- Database connections
+- Query results as dataframes
+- Parameterized queries
+
+### layout
+Organizing notebook layouts:
+- Horizontal and vertical layouts
+- Tabs and accordions
+- Responsive design
+- Best practices
+
+### fileformat
+Understanding marimo files:
+- File structure
+- Version control
+- Cell metadata
+- Migration and compatibility
+
+### markdown-format
+Using markdown-based notebooks:
+- Creating .md notebooks
+- Code fences
+- Mixed content
+- When to use .md vs .py
+
+### for-jupyter-users
+Transition guide covering:
+- Key differences from Jupyter
+- Migration strategies
+- Common gotchas
+- Best practices
+
+## Tips
+
+- Start with `intro` if you're new to marimo
+- Tutorials are interactive - try modifying the code!
+- Each tutorial is a real marimo notebook you can explore
+- Use tutorials as templates for your own notebooks
+- Tutorials are kept up-to-date with the latest marimo features
+
+## Getting Help
+
+```bash
+# List all available tutorials
+marimo tutorial --help
+
+# See all command options
+marimo tutorial intro --help
+```
+
+## Related Commands
+
+- [marimo edit](/cli/edit) - Create your own notebooks
+- [marimo run](/cli/run) - Run notebooks as apps

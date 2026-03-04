@@ -1,0 +1,521 @@
+---
+title: Creating Custom UI Components
+description: Build custom interactive components using anywidget and integrate them into marimo notebooks
+---
+
+# Creating Custom UI Components
+
+marimo provides a rich library of built-in UI components, but you can also create custom components using [anywidget](https://anywidget.dev/) - a framework for building custom Jupyter widgets with modern web technologies.
+
+## Why Custom Components?
+
+Create custom components when you need:
+
+- Specialized visualizations not covered by built-in components
+- Integration with third-party JavaScript libraries
+- Custom interactive controls for domain-specific workflows
+- Shareable, reusable components across projects
+
+## Using anywidget with marimo
+
+marimo provides seamless integration with anywidget through `mo.ui.anywidget()`:
+
+```python
+import marimo as mo
+from my_widget import MyCustomWidget
+
+# Wrap anywidget with mo.ui.anywidget()
+widget = mo.ui.anywidget(MyCustomWidget())
+
+# Access widget state
+widget.value  # Returns widget's current state as a dictionary
+```
+
+## Quick Start: Basic Widget
+
+Create a simple color picker widget:
+
+```python
+import anywidget
+import traitlets
+
+class ColorPicker(anywidget.AnyWidget):
+    _esm = """
+    export function render({ model, el }) {
+        let input = document.createElement('input');
+        input.type = 'color';
+        input.value = model.get('color');
+        
+        input.addEventListener('input', () => {
+            model.set('color', input.value);
+            model.save_changes();
+        });
+        
+        el.appendChild(input);
+    }
+    """
+    
+    color = traitlets.Unicode('#3b82f6').tag(sync=True)
+
+# Use in marimo
+import marimo as mo
+color_picker = mo.ui.anywidget(ColorPicker())
+```
+
+```python
+# In another cell, access the selected color
+mo.md(f"Selected color: {color_picker.color}")
+```
+
+## Component Architecture
+
+### Anatomy of an anywidget
+
+From `marimo/_plugins/ui/_impl/from_anywidget.py`:
+
+```python
+class anywidget(UIElement[ModelIdRef, AnyWidgetState]):
+    """
+    Create a UIElement from an AnyWidget.
+    
+    This proxies all the widget's attributes and methods, allowing seamless
+    integration of AnyWidget instances with marimo's UI system.
+    """
+    
+    def __init__(self, widget: AnyWidget):
+        self.widget = widget
+        # Widget state is synchronized automatically
+        # with marimo's reactive system
+```
+
+Key components:
+
+1. **Python traits**: Define the widget's state (synchronized between Python and JavaScript)
+2. **JavaScript module**: Renders the UI and handles interactions
+3. **marimo wrapper**: Integrates with marimo's reactive execution
+
+### State Synchronization
+
+marimo automatically synchronizes widget state:
+
+```python
+# Changes in JavaScript automatically update Python
+widget.color = '#ff0000'  # Updates both Python and frontend
+
+# Access current state
+current_state = widget.value  # Dict of all traits
+```
+
+## Building a Complete Widget
+
+### Example: Interactive Drawing Widget
+
+From `examples/third_party/anywidget/tldraw_colorpicker.py`:
+
+```python
+import marimo as mo
+import numpy as np
+import matplotlib.pyplot as plt
+from tldraw import ReactiveColorPicker
+
+# Create the widget
+color_widget = mo.ui.anywidget(ReactiveColorPicker())
+
+# Use in visualization
+fig, ax = plt.subplots()
+ax.scatter(x, y, s=sizes*5, color=color_widget.color or None)
+
+mo.hstack([color_widget, plt.gca()])
+```
+
+### Widget with Multiple Traits
+
+```python
+import anywidget
+import traitlets
+
+class RangeSelector(anywidget.AnyWidget):
+    _esm = """
+    export function render({ model, el }) {
+        const container = document.createElement('div');
+        
+        const minInput = document.createElement('input');
+        minInput.type = 'range';
+        minInput.min = 0;
+        minInput.max = 100;
+        minInput.value = model.get('min_value');
+        
+        const maxInput = document.createElement('input');
+        maxInput.type = 'range';
+        maxInput.min = 0;
+        maxInput.max = 100;
+        maxInput.value = model.get('max_value');
+        
+        minInput.addEventListener('input', () => {
+            model.set('min_value', parseInt(minInput.value));
+            model.save_changes();
+        });
+        
+        maxInput.addEventListener('input', () => {
+            model.set('max_value', parseInt(maxInput.value));
+            model.save_changes();
+        });
+        
+        container.appendChild(minInput);
+        container.appendChild(maxInput);
+        el.appendChild(container);
+    }
+    """
+    
+    min_value = traitlets.Int(0).tag(sync=True)
+    max_value = traitlets.Int(100).tag(sync=True)
+
+# Use in marimo
+range_selector = mo.ui.anywidget(RangeSelector())
+
+# Access both values
+filtered_data = data[
+    (data > range_selector.min_value) & 
+    (data < range_selector.max_value)
+]
+```
+
+## Advanced Features
+
+### Using External Libraries
+
+Integrate JavaScript libraries like D3, Plotly, or custom frameworks:
+
+```python
+import anywidget
+import traitlets
+
+class D3Visualization(anywidget.AnyWidget):
+    _esm = """
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+    
+    export function render({ model, el }) {
+        const data = model.get('data');
+        
+        const svg = d3.select(el)
+            .append('svg')
+            .attr('width', 400)
+            .attr('height', 300);
+        
+        svg.selectAll('circle')
+            .data(data)
+            .enter()
+            .append('circle')
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y)
+            .attr('r', 5)
+            .on('click', (event, d) => {
+                model.set('selected_point', d);
+                model.save_changes();
+            });
+    }
+    """
+    
+    data = traitlets.List([]).tag(sync=True)
+    selected_point = traitlets.Dict({}).tag(sync=True)
+```
+
+### CSS Styling
+
+Add custom styles to your widget:
+
+```python
+class StyledWidget(anywidget.AnyWidget):
+    _esm = """
+    export function render({ model, el }) {
+        const button = document.createElement('button');
+        button.textContent = model.get('label');
+        button.className = 'custom-button';
+        el.appendChild(button);
+    }
+    """
+    
+    _css = """
+    .custom-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: transform 0.2s;
+    }
+    
+    .custom-button:hover {
+        transform: scale(1.05);
+    }
+    """
+    
+    label = traitlets.Unicode("Click me").tag(sync=True)
+```
+
+### Binary Data Transfer
+
+Transfer binary data efficiently (images, arrays, etc.):
+
+```python
+import anywidget
+import traitlets
+import numpy as np
+
+class ImageWidget(anywidget.AnyWidget):
+    _esm = """
+    export function render({ model, el }) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        model.on('change:image_data', () => {
+            const data = new Uint8ClampedArray(model.get('image_data'));
+            const imageData = new ImageData(data, model.get('width'));
+            canvas.width = model.get('width');
+            canvas.height = model.get('height');
+            ctx.putImageData(imageData, 0, 0);
+        });
+        
+        el.appendChild(canvas);
+    }
+    """
+    
+    image_data = traitlets.Bytes().tag(sync=True)
+    width = traitlets.Int(256).tag(sync=True)
+    height = traitlets.Int(256).tag(sync=True)
+
+# Use with numpy array
+img_widget = mo.ui.anywidget(ImageWidget())
+img_array = np.random.randint(0, 255, (256, 256, 4), dtype=np.uint8)
+img_widget.image_data = img_array.tobytes()
+img_widget.width = 256
+img_widget.height = 256
+```
+
+## Widget Lifecycle
+
+From `marimo/_plugins/ui/_impl/anywidget/init.py`:
+
+```python
+class CommLifecycleItem(CellLifecycleItem):
+    """Manages widget cleanup when cells are re-executed."""
+    
+    def dispose(self, context: RuntimeContext, deletion: bool) -> bool:
+        # Close the communication channel
+        self._comm.close()
+        return True
+```
+
+marimo automatically:
+- Initializes widgets when cells run
+- Cleans up widgets when cells are re-executed or deleted
+- Manages communication channels between Python and JavaScript
+
+## Best Practices
+
+<Accordion title="Keep state minimal">
+  Only sync essential state between Python and JavaScript:
+  
+  ```python
+  # ✓ Good: Only sync what's needed
+  class GoodWidget(anywidget.AnyWidget):
+      selected_id = traitlets.Unicode().tag(sync=True)
+  
+  # ❌ Avoid: Syncing large computed values
+  class BadWidget(anywidget.AnyWidget):
+      full_dataset = traitlets.List().tag(sync=True)  # Too much data
+  ```
+</Accordion>
+
+<Accordion title="Handle initialization properly">
+  Ensure your widget handles initial state correctly:
+  
+  ```javascript
+  export function render({ model, el }) {
+      // Read initial state
+      const initialValue = model.get('value');
+      
+      // Set up UI with initial state
+      const input = createInput(initialValue);
+      
+      // Listen for changes from Python
+      model.on('change:value', () => {
+          input.value = model.get('value');
+      });
+      
+      // Send changes to Python
+      input.addEventListener('input', () => {
+          model.set('value', input.value);
+          model.save_changes();
+      });
+  }
+  ```
+</Accordion>
+
+<Accordion title="Use type hints">
+  Document widget traits with proper types:
+  
+  ```python
+  from typing import List, Dict
+  
+  class TypedWidget(anywidget.AnyWidget):
+      items: List[str] = traitlets.List(trait=traitlets.Unicode()).tag(sync=True)
+      config: Dict[str, any] = traitlets.Dict().tag(sync=True)
+  ```
+</Accordion>
+
+<Accordion title="Test your widgets">
+  Write tests for widget behavior:
+  
+  ```python
+  def test_widget_initialization():
+      widget = mo.ui.anywidget(MyWidget())
+      assert widget.value == expected_initial_value
+  
+  def test_widget_update():
+      widget = mo.ui.anywidget(MyWidget())
+      widget.property = "new_value"
+      assert widget.value['property'] == "new_value"
+  ```
+</Accordion>
+
+## Publishing Widgets
+
+### Package Structure
+
+```
+my-widget/
+├── pyproject.toml
+├── README.md
+├── src/
+│   └── my_widget/
+│       ├── __init__.py
+│       └── widget.py
+└── tests/
+    └── test_widget.py
+```
+
+### pyproject.toml
+
+```toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "my-widget"
+version = "0.1.0"
+description = "Custom marimo widget for ..."
+requires-python = ">=3.9"
+dependencies = [
+    "anywidget",
+    "marimo",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+```
+
+### Publishing to PyPI
+
+```bash
+# Build the package
+python -m build
+
+# Upload to PyPI
+python -m twine upload dist/*
+```
+
+### Usage After Publishing
+
+```python
+# Users install your widget
+# pip install my-widget
+
+import marimo as mo
+from my_widget import MyWidget
+
+widget = mo.ui.anywidget(MyWidget())
+```
+
+## Examples Gallery
+
+### Data Visualization Widget
+
+```python
+import anywidget
+import traitlets
+import pandas as pd
+
+class DataExplorer(anywidget.AnyWidget):
+    _esm = """/* Interactive data exploration UI */"""
+    data = traitlets.List().tag(sync=True)
+    selected_rows = traitlets.List().tag(sync=True)
+
+# Use with pandas
+explorer = mo.ui.anywidget(DataExplorer())
+explorer.data = df.to_dict('records')
+
+# Get selected data
+selected_df = df.iloc[explorer.selected_rows]
+```
+
+### Form Builder Widget
+
+```python
+class FormBuilder(anywidget.AnyWidget):
+    _esm = """/* Dynamic form creation */"""
+    schema = traitlets.Dict().tag(sync=True)
+    form_data = traitlets.Dict().tag(sync=True)
+
+form = mo.ui.anywidget(FormBuilder())
+form.schema = {
+    'name': {'type': 'text', 'label': 'Name'},
+    'age': {'type': 'number', 'label': 'Age'},
+}
+
+# Access submitted form data
+submitted_data = form.form_data
+```
+
+## Debugging Widgets
+
+### Console Logging
+
+```javascript
+export function render({ model, el }) {
+    console.log('Initial state:', model.get('value'));
+    
+    model.on('change', () => {
+        console.log('State changed:', model.attributes);
+    });
+}
+```
+
+### Error Handling
+
+```python
+class RobustWidget(anywidget.AnyWidget):
+    _esm = """
+    export function render({ model, el }) {
+        try {
+            // Your widget code
+        } catch (error) {
+            console.error('Widget error:', error);
+            el.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+        }
+    }
+    """
+```
+
+## Related Resources
+
+- [anywidget Documentation](https://anywidget.dev/) - Complete anywidget reference
+- [marimo UI Elements](https://docs.marimo.io/api/inputs/) - Built-in marimo components
+- [anywidget Examples](https://github.com/manzt/anywidget/tree/main/examples) - Example widgets
+- [Jupyter Widgets](https://ipywidgets.readthedocs.io/) - IPython widget ecosystem

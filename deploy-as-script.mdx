@@ -1,0 +1,519 @@
+---
+title: "Execute as Python Script"
+description: "Run marimo notebooks as command-line Python scripts for automation and batch processing"
+---
+
+# Execute as Python Script
+
+Run marimo notebooks as standard Python scripts from the command line. This is ideal for automation, batch processing, CI/CD pipelines, and workflows that produce side effects like writing to disk or sending notifications.
+
+## Basic Execution
+
+Run any marimo notebook as a Python script:
+
+```bash
+python my_notebook.py
+```
+
+When executed as a script:
+- All cells run in dependency order
+- Outputs go to stdout/stderr
+- UI elements are not interactive
+- The script exits when execution completes
+
+<Note>
+Unlike `marimo run`, which starts a web server, running as a script executes the notebook once and exits. Perfect for cron jobs, automated reports, and data pipelines.
+</Note>
+
+## Why Run as a Script?
+
+Use script execution when:
+
+- **Automating workflows**: Scheduled data processing, ETL jobs, report generation
+- **CI/CD pipelines**: Testing, validation, building artifacts
+- **Batch processing**: Process files, train models, generate outputs
+- **Command-line tools**: Interactive CLI applications with argparse
+- **System integration**: Call from other programs, shell scripts, or schedulers
+
+## Command-Line Arguments
+
+### Using argparse
+
+The recommended way to handle arguments uses Python's built-in `argparse`:
+
+```python
+import marimo as mo
+import sys
+import argparse
+
+# Define arguments
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process dataset")
+    parser.add_argument("--input", required=True, help="Input file path")
+    parser.add_argument("--output", required=True, help="Output file path")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    args = parser.parse_args()
+else:
+    # Default values when running as notebook
+    class Args:
+        input = "data/sample.csv"
+        output = "results/output.csv"
+        verbose = False
+    args = Args()
+```
+
+Run it:
+
+```bash
+python process_data.py --input data.csv --output results.csv --verbose
+```
+
+### Using simple-parsing
+
+For more complex configurations, use `simple-parsing`:
+
+```python
+import marimo as mo
+from dataclasses import dataclass
+import sys
+
+try:
+    from simple_parsing import ArgumentParser
+except ImportError:
+    mo.md("Install simple-parsing: pip install simple-parsing")
+    raise
+
+@dataclass
+class Config:
+    """Training configuration"""
+    learning_rate: float = 1e-4
+    epochs: int = 100
+    batch_size: int = 32
+    model_path: str = "model.pkl"
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_arguments(Config, dest="config")
+    args = parser.parse_args()
+    config = args.config
+else:
+    config = Config()  # Use defaults in notebook
+```
+
+Run it:
+
+```bash
+python train.py --learning_rate 0.001 --epochs 50 --batch_size 64
+```
+
+### Using mo.cli_args()
+
+marimo provides a lightweight argument parser:
+
+```python
+import marimo as mo
+
+args = mo.cli_args()
+if args:
+    dataset = args.get("dataset", "default")
+    year = int(args.get("year", 2024))
+    debug = args.get("debug", False)
+else:
+    # Defaults for notebook mode
+    dataset = "default"
+    year = 2024
+    debug = False
+```
+
+Run it:
+
+```bash
+python script.py -- --dataset sales --year 2024 --debug
+```
+
+<Warning>
+`mo.cli_args()` does basic type inference but doesn't provide argument validation or help text. For production scripts, use `argparse` or `simple-parsing`.
+</Warning>
+
+## Parameterization Patterns
+
+### Environment Variables
+
+Use environment variables for configuration:
+
+```python
+import os
+import marimo as mo
+
+# Read from environment with defaults
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///local.db")
+API_KEY = os.getenv("API_KEY", "")
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
+if not API_KEY:
+    mo.md("⚠️ **Warning**: API_KEY not set").callout(kind="warn")
+```
+
+Run it:
+
+```bash
+DATABASE_URL=postgresql://prod API_KEY=secret python script.py
+```
+
+### Configuration Files
+
+Load parameters from JSON, YAML, or TOML:
+
+```python
+import marimo as mo
+import json
+import sys
+from pathlib import Path
+
+if __name__ == "__main__":
+    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.json"
+else:
+    config_path = "config.json"
+
+with open(config_path) as f:
+    config = json.load(f)
+
+mo.md(f"Loaded config from {config_path}")
+```
+
+Run it:
+
+```bash
+python script.py production.json
+```
+
+### Conditional Logic
+
+Detect execution mode and adapt behavior:
+
+```python
+import marimo as mo
+import sys
+
+# Detect if running as script
+is_script_mode = __name__ == "__main__"
+
+if is_script_mode:
+    # Script mode: minimal output
+    def log(msg):
+        print(msg)
+else:
+    # Notebook mode: rich output
+    def log(msg):
+        return mo.md(msg)
+
+# Use throughout notebook
+log("Processing started...")
+```
+
+## Output and Side Effects
+
+### Writing Files
+
+```python
+import marimo as mo
+import pandas as pd
+from pathlib import Path
+
+# Process data
+df = pd.read_csv("input.csv")
+results = process(df)
+
+# Write outputs
+output_dir = Path("results")
+output_dir.mkdir(exist_ok=True)
+
+results.to_csv(output_dir / "processed.csv", index=False)
+results.to_parquet(output_dir / "processed.parquet")
+
+mo.md(f"✅ Saved {len(results)} rows to {output_dir}")
+```
+
+### Console Output
+
+Print statements appear in the terminal:
+
+```python
+import marimo as mo
+
+print("Starting processing...")
+for i in range(5):
+    print(f"Processing item {i+1}/5")
+    # Do work
+    
+print("✅ Complete!")
+mo.md("Processing finished")
+```
+
+Output:
+```
+Starting processing...
+Processing item 1/5
+Processing item 2/5
+...
+✅ Complete!
+```
+
+### Exit Codes
+
+Return meaningful exit codes for automation:
+
+```python
+import marimo as mo
+import sys
+
+try:
+    # Process data
+    results = dangerous_operation()
+    if not validate(results):
+        print("Validation failed!", file=sys.stderr)
+        sys.exit(1)
+    print(f"Success! Processed {len(results)} items")
+    sys.exit(0)
+except Exception as e:
+    print(f"Error: {e}", file=sys.stderr)
+    sys.exit(1)
+```
+
+Check exit codes in bash:
+
+```bash
+python script.py
+if [ $? -eq 0 ]; then
+    echo "Success"
+else
+    echo "Failed"
+    exit 1
+fi
+```
+
+## Integration with Workflows
+
+### Cron Jobs
+
+Schedule regular execution:
+
+```bash
+# Run daily at 2 AM
+0 2 * * * cd /path/to/project && python daily_report.py >> logs/$(date +\%Y-\%m-\%d).log 2>&1
+```
+
+### GitHub Actions
+
+Integrate with CI/CD:
+
+```yaml
+name: Run Analysis
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install marimo pandas
+      - run: python analysis.py --output results.csv
+      - uses: actions/upload-artifact@v3
+        with:
+          name: results
+          path: results.csv
+```
+
+### Shell Scripts
+
+Orchestrate multiple notebooks:
+
+```bash
+#!/bin/bash
+set -e  # Exit on error
+
+echo "Running ETL pipeline..."
+
+python 01_extract.py --source production
+python 02_transform.py --input data/raw --output data/clean
+python 03_load.py --target warehouse
+python 04_report.py --email team@company.com
+
+echo "✅ Pipeline complete"
+```
+
+### Python Subprocess
+
+Call from other Python code:
+
+```python
+import subprocess
+import sys
+
+result = subprocess.run(
+    [sys.executable, "notebook.py", "--", "--param", "value"],
+    capture_output=True,
+    text=True,
+    check=False
+)
+
+if result.returncode == 0:
+    print("Success:", result.stdout)
+else:
+    print("Failed:", result.stderr)
+    sys.exit(1)
+```
+
+## Validation Before Execution
+
+Check notebooks for issues before running:
+
+```bash
+# Lint notebook
+marimo check script.py
+
+# Run only if check passes
+marimo check script.py && python script.py
+```
+
+The `marimo check` command validates:
+- Multiple definition errors
+- Delete-nonlocal errors  
+- Cycles in the dependency graph
+- Other common issues
+
+See the [Lint Rules guide](https://docs.marimo.io/guides/editor_features/linting) for details.
+
+## Export with Execution
+
+Combine execution with export to HTML:
+
+```bash
+# Execute and save HTML output
+marimo export html notebook.py -o output.html
+
+# With arguments
+marimo export html report.py -o report.html -- --year 2024 --quarter Q1
+```
+
+This runs the notebook and captures all outputs in the HTML file.
+
+## Performance Considerations
+
+<Tip>
+**Optimize script execution:**
+
+1. **Cache expensive computations**: Use `@functools.cache` or persist results to disk
+2. **Process in chunks**: For large datasets, use batch processing
+3. **Parallelize**: Use `multiprocessing` or `joblib` for CPU-bound tasks
+4. **Profile first**: Use `python -m cProfile script.py` to identify bottlenecks
+5. **Minimize dependencies**: Import only what's needed in each cell
+</Tip>
+
+## Debugging Scripts
+
+Use Python's debugger:
+
+```bash
+# Run with debugger
+python -m pdb script.py
+
+# Or add breakpoint in code
+import marimo as mo
+
+# Your code
+breakpoint()  # Execution pauses here
+# More code
+```
+
+## Examples
+
+### Daily Report Generator
+
+```python
+import marimo as mo
+import pandas as pd
+from datetime import datetime
+import argparse
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--email", required=True)
+    parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"))
+    args = parser.parse_args()
+else:
+    class Args:
+        email = "team@example.com"
+        date = datetime.now().strftime("%Y-%m-%d")
+    args = Args()
+
+# Load and process data
+df = pd.read_sql(f"SELECT * FROM sales WHERE date = '{args.date}'", conn)
+summary = df.groupby('region')['revenue'].sum()
+
+# Generate and send report
+report = mo.md(f"""
+# Daily Sales Report - {args.date}
+{mo.ui.table(summary)}
+""")
+
+if __name__ == "__main__":
+    send_email(args.email, report.text)
+    print(f"✅ Report sent to {args.email}")
+```
+
+Run daily:
+```bash
+python daily_report.py --email team@company.com
+```
+
+### Model Training Pipeline
+
+```bash
+# Train model with custom parameters
+python train_model.py -- --lr 0.001 --epochs 100 --gpu
+```
+
+### Data Validation
+
+```bash
+# Validate data and exit with status code
+python validate_data.py --input data.csv || exit 1
+```
+
+## Best Practices
+
+<Warning>
+**For production scripts:**
+
+1. **Use argparse** for clear argument definitions and help text
+2. **Validate inputs** before processing
+3. **Handle errors gracefully** with try/except
+4. **Log important events** to files or monitoring systems
+5. **Return meaningful exit codes** (0 for success, non-zero for errors)
+6. **Make scripts idempotent** so they can safely re-run
+7. **Test in notebook mode first** before deploying as script
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deploy as App" icon="window" href="/deploy-as-app">
+    Run notebooks as interactive web applications
+  </Card>
+  <Card title="CLI Arguments" icon="terminal" href="/api/cli_args">
+    Advanced command-line argument handling
+  </Card>
+  <Card title="Export Formats" icon="file-export" href="/guides/exporting">
+    Export notebooks to HTML, PDF, and more
+  </Card>
+  <Card title="CI/CD Integration" icon="gear" href="/deployment-platforms">
+    Deploy scripts in automated workflows
+  </Card>
+</CardGroup>

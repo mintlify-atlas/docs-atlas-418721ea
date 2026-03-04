@@ -1,0 +1,75 @@
+---
+title: sidebar
+---
+
+Displays content in a sidebar.
+
+This is a special layout component that will display the content in a sidebar layout, rather than below/above the cell.
+
+This component still needs to be the last expression in the cell, in order to display correctly.
+
+You may use more than one `mo.sidebar` - they will be displayed in the order they are called.
+
+## Usage
+
+```python
+mo.sidebar(
+    [
+        mo.md("# marimo"),
+        mo.nav_menu(
+            {
+                "#home": f"{mo.icon('lucide:home')} Home",
+                "#about": f"{mo.icon('lucide:user')} About",
+                "#contact": f"{mo.icon('lucide:phone')} Contact",
+                "Links": {
+                    "https://twitter.com/marimo_io": "Twitter",
+                    "https://github.com/marimo-team/marimo": "GitHub",
+                },
+            },
+            orientation="vertical",
+        ),
+    ]
+)
+```
+
+## Signature
+
+```python
+mo.sidebar(
+    item: object,
+    footer: Optional[object] = None,
+    *,
+    width: Optional[str | int] = None
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="item" type="object" required>
+  The content to display in the sidebar. Strings are wrapped in `mo.md()`, lists are wrapped in `mo.vstack()`.
+</ParamField>
+
+<ParamField path="footer" type="Optional[object]" default="None">
+  The content to display at the bottom of the sidebar. Strings are wrapped in `mo.md()`, lists are wrapped in `mo.vstack()`.
+</ParamField>
+
+<ParamField path="width" type="Optional[str | int]" default="None">
+  The width of the sidebar when open. Can be any valid CSS width value (e.g. `"300px"`, `"20rem"`). If not provided, defaults to the standard width.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An Html object.
+</ParamField>
+
+## Notes
+
+The sidebar class has restricted methods compared to regular `Html` objects. The following methods are **not supported**:
+
+- `.batch()`
+- `.center()`
+- `.right()`
+- `.left()`
+- `.callout()`
+- `.style()`

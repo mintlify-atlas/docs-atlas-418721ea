@@ -1,0 +1,73 @@
+---
+title: 'API Reference Overview'
+description: 'Complete API reference for marimo reactive Python notebooks'
+---
+
+# marimo API Reference
+
+marimo is a reactive Python notebook library that brings notebooks to life with powerful UI elements, dynamic markdown, and seamless interactivity.
+
+## Core API
+
+The marimo library provides three main categories of functionality:
+
+### Application Elements
+
+- **[App](/api/app)** - Create and manage marimo notebooks
+- **[Cell](/api/cell)** - Define reactive cells in your notebook
+
+### UI Components (`mo.ui`)
+
+Interactive UI elements for building reactive interfaces:
+
+**Input Controls**
+- [button](/api/ui/button) - Interactive button with callbacks
+- [slider](/api/ui/slider) - Numeric slider for value selection
+- [text](/api/ui/text) - Text input field
+- [checkbox](/api/ui/checkbox) - Boolean checkbox
+- [radio](/api/ui/radio) - Radio button group
+- [dropdown](/api/ui/dropdown) - Dropdown selector
+- [multiselect](/api/ui/multiselect) - Multi-option selector
+- [date](/api/ui/date) - Date picker
+- [file](/api/ui/file) - File upload
+
+**Data Components**
+- [table](/api/ui/table) - Interactive data table
+- [dataframe](/api/ui/dataframe) - DataFrame transformer
+
+**Advanced Components**
+- [chat](/api/ui/chat) - Chatbot interface
+- [form](/api/ui/form) - Form wrapper for UI elements
+- [batch](/api/ui/batch) - Batch multiple UI elements
+
+## Getting Started
+
+```python
+import marimo as mo
+
+# Create a marimo app
+app = mo.App()
+
+# Define a cell
+@app.cell
+def __():
+    import marimo as mo
+    return mo,
+
+# Create UI elements
+@app.cell
+def __(mo):
+    slider = mo.ui.slider(1, 100, value=50)
+    return slider,
+```
+
+## Installation
+
+```bash
+pip install marimo
+```
+
+## Learn More
+
+- [marimo Documentation](https://docs.marimo.io)
+- [GitHub Repository](https://github.com/marimo-team/marimo)

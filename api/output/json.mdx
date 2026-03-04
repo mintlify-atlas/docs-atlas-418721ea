@@ -1,0 +1,47 @@
+---
+title: json
+---
+
+Build a JSON output element.
+
+## Usage
+
+```python
+data = {"name": "Alice", "age": 30, "city": "New York"}
+mo.json(data)
+```
+
+```python
+mo.json(data, name="User Data")
+```
+
+## Signature
+
+```python
+mo.json(
+    json_data: JSONType,
+    name: Optional[str] = None,
+    *,
+    value_types: Literal["python", "json"] = "python"
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="json_data" type="JSONType" required>
+  JSON-serializable data to display.
+</ParamField>
+
+<ParamField path="name" type="Optional[str]" default="None">
+  Optional text label.
+</ParamField>
+
+<ParamField path="value_types" type="Literal['python', 'json']" default="'python'">
+  Optional value types to display, e.g. `"python"` (default) or `"json"`.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  A string of HTML for a JSON output element.
+</ParamField>

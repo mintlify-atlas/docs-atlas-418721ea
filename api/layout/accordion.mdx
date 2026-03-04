@@ -1,0 +1,51 @@
+---
+title: accordion
+---
+
+Accordion of one or more items.
+
+## Usage
+
+```python
+mo.accordion(
+    {"Tip": "Use accordions to let users reveal and hide content."}
+)
+```
+
+Accordion content can be lazily loaded:
+
+```python
+mo.accordion({"View total": expensive_item}, lazy=True)
+```
+
+where `expensive_item` is the item to render, or a callable that returns the item to render.
+
+## Signature
+
+```python
+mo.accordion(
+    items: dict[str, object],
+    multiple: bool = False,
+    lazy: bool = False
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="items" type="dict[str, object]" required>
+  A dictionary of item names to item content; strings are interpreted as markdown.
+</ParamField>
+
+<ParamField path="multiple" type="bool" default="False">
+  Whether to allow multiple items to be open simultaneously.
+</ParamField>
+
+<ParamField path="lazy" type="bool" default="False">
+  A boolean, whether to lazily load the accordion content. This is a convenience that wraps each accordion in a `mo.lazy` component.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An `Html` object.
+</ParamField>

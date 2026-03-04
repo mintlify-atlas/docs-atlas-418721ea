@@ -1,0 +1,495 @@
+---
+title: Package Management
+description: Automatic dependency management with PEP 723 inline script metadata
+---
+
+marimo provides built-in package management using PEP 723 inline script metadata. Dependencies are declared directly in your notebook and can be automatically installed in isolated environments.
+
+## PEP 723 Script Metadata
+
+marimo notebooks can include dependency information at the top of the file:
+
+```python notebook.py
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "marimo",
+#     "pandas>=2.0.0",
+#     "plotly>=5.0.0",
+#     "scikit-learn",
+# ]
+# ///
+
+import marimo
+
+app = marimo.App()
+
+@app.cell
+def __():
+    import pandas as pd
+    import plotly.express as px
+    from sklearn.linear_model import LinearRegression
+    return pd, px, LinearRegression
+```
+
+<Note>
+The `# ///` markers define a PEP 723 metadata block. This is a standard format supported by tools like `uv`.
+</Note>
+
+## Auto-Install with uv
+
+When using `--sandbox` mode, marimo automatically manages dependencies using `uv`.
+
+### Installing uv
+
+First, install `uv`:
+
+```bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# With pip
+pip install uv
+```
+
+### Running in Sandbox Mode
+
+<Accordion title="Single Notebook">
+  ```bash
+  # marimo automatically detects dependencies and prompts
+  marimo edit notebook.py
+
+  # Or explicitly use sandbox mode
+  marimo edit notebook.py --sandbox
+  ```
+
+  When you open a notebook with dependencies:
+  1. marimo detects the PEP 723 metadata
+  2. Prompts: "Run in a sandboxed venv?"
+  3. Creates an isolated environment with `uv`
+  4. Installs all dependencies automatically
+  5. Runs the notebook in that environment
+
+  <Tip>
+  Use `marimo -y edit notebook.py` to auto-accept the sandbox prompt.
+  </Tip>
+</Accordion>
+
+<Accordion title="Multiple Notebooks (Directory)">
+  ```bash
+  # Each notebook gets its own sandboxed environment
+  marimo edit ./notebooks --sandbox
+  ```
+
+  For directories:
+  - Each notebook has its own isolated venv
+  - Dependencies are per-notebook, not shared
+  - Requires `pyzmq` for IPC communication:
+
+  ```bash
+  pip install marimo[sandbox]
+  ```
+</Accordion>
+
+## Managing Dependencies
+
+### Adding Packages
+
+marimo provides a UI for adding packages, or you can use `uv` directly:
+
+```bash
+# Add a package to the script metadata
+uv add --script notebook.py requests
+
+# Add a versioned package
+uv add --script notebook.py "pandas>=2.0.0"
+
+# Add multiple packages
+uv add --script notebook.py numpy scipy matplotlib
+```
+
+This updates the metadata block:
+
+```python
+# /// script
+# dependencies = [
+#     "marimo",
+#     "requests",
+#     "pandas>=2.0.0",
+#     "numpy",
+#     "scipy",
+#     "matplotlib",
+# ]
+# ///
+```
+
+### Version Constraints
+
+Specify version requirements using standard pip syntax:
+
+```python
+# /// script
+# dependencies = [
+#     "pandas>=2.0.0",        # Minimum version
+#     "numpy==1.24.0",        # Exact version
+#     "scipy>=1.10,<2.0",     # Range
+#     "matplotlib~=3.7.0",    # Compatible release
+# ]
+# ///
+```
+
+### Python Version
+
+Specify required Python version:
+
+```python
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [...]
+# ///
+```
+
+marimo will use this version when creating the sandbox environment.
+
+## Package Sources
+
+### Custom Index URLs
+
+Use private PyPI servers or mirrors:
+
+```python
+# /// script
+# dependencies = ["my-private-package"]
+#
+# [tool.uv]
+# index-url = "https://pypi.company.com/simple"
+# ///
+```
+
+### Extra Index URLs
+
+Combine multiple package sources:
+
+```python
+# /// script
+# dependencies = ["public-pkg", "private-pkg"]
+#
+# [tool.uv]
+# extra-index-url = ["https://private.pypi.org/simple"]
+# ///
+```
+
+### Named Indexes
+
+Use named indexes for better control:
+
+```python
+# /// script
+# dependencies = ["my-package"]
+#
+# [[tool.uv.index]]
+# url = "https://custom-index.com/simple"
+# ///
+```
+
+## Auto-Install on Import
+
+When running without `--sandbox`, marimo can detect missing packages:
+
+```python
+@app.cell
+def __():
+    # marimo detects if requests is not installed
+    import requests
+    return (requests,)
+```
+
+<Warning>
+Auto-install without sandbox installs packages globally. Use `--sandbox` for isolated environments.
+</Warning>
+
+## Serializing Dependencies
+
+### Export Requirements
+
+Generate a `requirements.txt` from script metadata:
+
+```bash
+# Export dependencies
+uv export --script notebook.py --no-hashes > requirements.txt
+```
+
+Creates:
+
+```txt requirements.txt
+marimo==0.9.0
+pandas>=2.0.0
+plotly>=5.0.0
+scikit-learn
+```
+
+### Lock Files
+
+For reproducible environments, use lock files:
+
+```bash
+# Create lock file
+uv lock --script notebook.py
+
+# Install from lock file
+uv sync --script notebook.py
+```
+
+## Virtual Environments
+
+### Manual Virtual Environments
+
+You can still use traditional virtual environments:
+
+```bash
+# Create venv
+python -m venv venv
+
+# Activate
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+
+# Install marimo and dependencies
+pip install marimo pandas plotly
+
+# Run notebook
+marimo edit notebook.py
+```
+
+### Sandbox vs. Manual venvs
+
+| Feature | Sandbox (`--sandbox`) | Manual venv |
+|---------|----------------------|-------------|
+| **Setup** | Automatic | Manual |
+| **Isolation** | Per-notebook | Per-project |
+| **Persistence** | Ephemeral (cached) | Persistent |
+| **Dependencies** | From PEP 723 metadata | requirements.txt |
+| **Switching** | Automatic | Manual activation |
+| **Best for** | Notebooks, scripts | Projects, apps |
+
+## Environment Variables
+
+### Metadata Management
+
+Control when marimo manages metadata:
+
+```bash
+# Enable metadata management
+export MARIMO_MANAGE_SCRIPT_METADATA=true
+marimo edit notebook.py --sandbox
+```
+
+When enabled, marimo automatically:
+- Adds `marimo` to dependencies if missing
+- Updates `requires-python` based on current Python version
+- Keeps metadata in sync with your environment
+
+## Common Workflows
+
+<AccordionGroup>
+  <Accordion title="Starting a New Notebook">
+    ```bash
+    # Create notebook
+    marimo edit new_analysis.py
+
+    # Add dependencies via UI or:
+    uv add --script new_analysis.py pandas plotly
+
+    # Run in sandbox
+    marimo edit new_analysis.py --sandbox
+    ```
+  </Accordion>
+
+  <Accordion title="Sharing a Notebook">
+    ```bash
+    # Dependencies are embedded in the .py file
+    git add notebook.py
+    git commit -m "Add analysis notebook"
+    git push
+
+    # Collaborator runs:
+    git pull
+    marimo edit notebook.py --sandbox
+    # Dependencies auto-install!
+    ```
+  </Accordion>
+
+  <Accordion title="Updating Dependencies">
+    ```bash
+    # Update a package version
+    uv add --script notebook.py "pandas>=2.1.0"
+
+    # Run with fresh install
+    marimo edit notebook.py --sandbox
+    ```
+  </Accordion>
+
+  <Accordion title="Running in Production">
+    ```bash
+    # Export requirements
+    uv export --script notebook.py > requirements.txt
+
+    # Install in production venv
+    pip install -r requirements.txt
+
+    # Run without sandbox
+    marimo run notebook.py
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="uv not found">
+    **Problem:** `marimo edit --sandbox` fails with "uv not found"
+
+    **Solution:** Install `uv`:
+    ```bash
+    pip install uv
+    # or
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+  </Accordion>
+
+  <Accordion title="pyzmq missing (multi-file sandbox)">
+    **Problem:** `marimo edit ./dir --sandbox` fails
+
+    **Solution:** Install sandbox extras:
+    ```bash
+    pip install marimo[sandbox]
+    ```
+  </Accordion>
+
+  <Accordion title="Package installation fails">
+    **Problem:** Dependency resolution errors
+
+    **Solution:**
+    ```bash
+    # Check metadata syntax
+    uv tree --script notebook.py
+
+    # Try with specific Python version
+    marimo edit notebook.py --sandbox
+    ```
+  </Accordion>
+
+  <Accordion title="Slow first install">
+    **Problem:** First `--sandbox` run is slow
+
+    **Solution:** This is normal - `uv` is creating a venv and installing packages. Subsequent runs use cached environments.
+
+    Speed it up:
+    ```bash
+    # Pre-compile bytecode
+    marimo edit notebook.py --sandbox
+    # (already done by default!)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Pin important versions">
+    ```python
+    # /// script
+    # dependencies = [
+    #     "pandas>=2.0.0",      # Allow updates
+    #     "scikit-learn==1.3.0",  # Pin critical packages
+    # ]
+    # ///
+    ```
+  </Step>
+
+  <Step title="Document package choices">
+    ```python
+    # /// script
+    # dependencies = [
+    #     "pandas>=2.0.0",  # Requires 2.0 for new API
+    #     "plotly",          # Interactive visualizations
+    # ]
+    # ///
+    ```
+  </Step>
+
+  <Step title="Keep dependencies minimal">
+    Only include packages you actually import:
+
+    ```python
+    # Don't list transitive dependencies
+    # uv handles them automatically
+    ```
+  </Step>
+
+  <Step title="Test in sandbox mode">
+    ```bash
+    # Verify clean installation
+    marimo edit notebook.py --sandbox
+    ```
+  </Step>
+</Steps>
+
+## Comparison with Other Tools
+
+| Tool | marimo + uv | pip + requirements.txt | conda |
+|------|-------------|------------------------|-------|
+| **Metadata location** | In notebook file | Separate file | environment.yml |
+| **Isolation** | Per-notebook | Per-environment | Per-environment |
+| **Speed** | Very fast (uv) | Moderate | Slow |
+| **Standard** | PEP 723 | requirements.txt | conda format |
+| **Version control** | Single file | Multiple files | Multiple files |
+
+## Advanced Configuration
+
+### Editable Installs
+
+For development, install packages in editable mode:
+
+```bash
+# Add local package
+uv add --script notebook.py -e ../my-package
+```
+
+Updates metadata:
+
+```python
+# /// script
+# dependencies = [
+#     "-e ../my-package",
+# ]
+# ///
+```
+
+### Environment-Specific Dependencies
+
+Use environment markers:
+
+```python
+# /// script
+# dependencies = [
+#     "pandas",
+#     "pywin32; platform_system=='Windows'",
+#     "uvloop; platform_system=='Linux'",
+# ]
+# ///
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Creating Notebooks" icon="plus" href="/creating-notebooks">
+    Learn notebook structure and cells
+  </Card>
+  <Card title="Running Notebooks" icon="play" href="/running-notebooks">
+    Explore execution modes
+  </Card>
+</CardGroup>

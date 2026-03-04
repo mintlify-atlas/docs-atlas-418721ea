@@ -1,0 +1,77 @@
+---
+title: 'Multiselect'
+description: 'Select multiple options from a list'
+---
+
+# mo.ui.multiselect
+
+Create a multiselect dropdown for selecting multiple options.
+
+## Signature
+
+```python
+mo.ui.multiselect(
+    options: Sequence[str] | dict[str, Any],
+    value: Sequence[str] | None = None,
+    *,
+    label: str = "",
+    on_change: Callable[[list[object]], None] | None = None,
+    full_width: bool = False,
+    max_selections: int | None = None
+)
+```
+
+## Parameters
+
+<ParamField path="options" type="Sequence[str] | dict[str, Any]" required>
+  List of options or dictionary mapping labels to values
+</ParamField>
+
+<ParamField path="value" type="Sequence[str]">
+  Initially selected values
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the multiselect
+</ParamField>
+
+<ParamField path="full_width" type="bool" default="False">
+  Whether multiselect takes full width
+</ParamField>
+
+<ParamField path="max_selections" type="int">
+  Maximum number of selections allowed
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+
+# Basic multiselect
+fruits = mo.ui.multiselect(
+    options=["Apple", "Banana", "Cherry", "Date"],
+    label="**Select fruits:**"
+)
+fruits
+```
+
+```python
+# With initial selection
+selected = mo.ui.multiselect(
+    options=["Python", "JavaScript", "Rust", "Go"],
+    value=["Python"],
+    label="Programming languages"
+)
+
+mo.md(f"You selected: {', '.join(selected.value)}")
+```
+
+```python
+# Limited selections
+top_three = mo.ui.multiselect(
+    options=["A", "B", "C", "D", "E"],
+    max_selections=3,
+    label="Pick your top 3"
+)
+```

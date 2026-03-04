@@ -1,0 +1,229 @@
+---
+title: 'marimo convert'
+description: 'Convert Jupyter notebooks, Markdown files, and Python scripts to marimo notebooks'
+---
+
+# marimo convert
+
+Convert Jupyter notebooks, Markdown files, or Python scripts to marimo notebook format.
+
+## Usage
+
+```bash
+marimo convert FILENAME [OPTIONS]
+```
+
+## Arguments
+
+**FILENAME** - File to convert (required)
+- Supported formats: `.ipynb`, `.md`, `.qmd`, `.py`
+- Can be a local file path
+- Can be a GitHub URL to a notebook
+
+## Options
+
+**-o, --output PATH** - Output file path
+- Type: Path
+- If not provided, the converted notebook is printed to stdout
+- Parent directories will be created if they don't exist
+
+## Supported Formats
+
+### Jupyter Notebooks (`.ipynb`)
+
+- Converts Jupyter notebooks to marimo format
+- Cell outputs are **stripped** during conversion
+- Cell execution order is preserved
+- Markdown cells are converted to marimo markdown cells
+
+### Markdown Files (`.md`, `.qmd`)
+
+- Only `{python}` fenced code blocks are converted to cells
+- Other content is ignored
+- Example of supported syntax:
+
+````markdown
+```{python}
+import pandas as pd
+df = pd.DataFrame({'a': [1, 2, 3]})
+```
+
+Some text here.
+
+```{python}
+print(df)
+```
+````
+
+### Python Scripts (`.py`)
+
+- **If already a valid marimo notebook**: No conversion is performed
+- **Otherwise**: Attempts conversion using py:percent format
+- Preserves top-level comments and docstrings
+- Supports `# %%` cell delimiters
+
+Example py:percent format:
+
+```python
+# %% [markdown]
+# # My Analysis
+
+# %%
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# %%
+data = pd.read_csv('data.csv')
+data.head()
+```
+
+## Examples
+
+### Convert Jupyter Notebook
+
+```bash
+# Convert and save to file
+marimo convert notebook.ipynb -o notebook.py
+
+# Convert and print to stdout
+marimo convert notebook.ipynb
+
+# Pipe output to another command
+marimo convert notebook.ipynb | grep "import"
+```
+
+### Convert from GitHub
+
+```bash
+# Convert a notebook from GitHub
+marimo convert https://raw.githubusercontent.com/user/repo/main/notebook.ipynb -o notebook.py
+```
+
+### Convert Markdown
+
+```bash
+# Convert Markdown document
+marimo convert analysis.md -o analysis.py
+
+# Convert Quarto document
+marimo convert report.qmd -o report.py
+```
+
+### Convert Python Script
+
+```bash
+# Convert py:percent script
+marimo convert script.py -o notebook.py
+
+# Check if file is already a marimo notebook
+marimo convert my_notebook.py
+# Output: "File is already a valid marimo notebook."
+```
+
+### Using Global Flags
+
+```bash
+# Suppress output during conversion
+marimo -q convert notebook.ipynb -o notebook.py
+
+# Auto-accept prompts (non-interactive)
+marimo -y convert notebook.ipynb -o notebook.py
+
+# Combine flags
+marimo -q -y convert notebook.ipynb -o notebook.py
+```
+
+### Workflow Example
+
+```bash
+# Convert Jupyter notebook
+marimo convert notebook.ipynb -o notebook.py
+
+# Edit the converted notebook
+marimo edit notebook.py
+```
+
+## Important Notes
+
+### Reactivity Considerations
+
+marimo's reactive execution model differs from Jupyter's linear execution:
+
+- **Variables are immutable**: Each cell defines variables only once
+- **No mutation across cells**: Code that modifies variables across multiple cells will need refactoring
+
+Example that needs refactoring:
+
+```python
+# Cell 1 (Jupyter)
+df = pd.DataFrame({'a': [1, 2, 3]})
+
+# Cell 2 (Jupyter)
+df['b'] = df['a'] * 2  # This mutates df from Cell 1
+```
+
+In marimo, refactor to:
+
+```python
+# Cell 1
+df_original = pd.DataFrame({'a': [1, 2, 3]})
+
+# Cell 2
+df = df_original.assign(b=lambda x: x['a'] * 2)
+```
+
+### After Conversion
+
+1. Review the converted notebook for any issues
+2. Refactor code that mutates variables across cells
+3. Test the notebook to ensure it works as expected
+4. Enjoy marimo's reactive features!
+
+## Dependencies
+
+### For Python Script Conversion
+
+Converting py:percent format Python scripts requires `jupytext`:
+
+```bash
+pip install jupytext
+```
+
+If `jupytext` is not installed, marimo will provide installation instructions.
+
+## Error Handling
+
+### Syntax Errors
+
+If the input file has syntax errors:
+
+```bash
+marimo convert broken.py -o notebook.py
+# Output: "File cannot be converted. It may have syntax errors."
+```
+
+### Invalid File Type
+
+```bash
+marimo convert document.txt -o notebook.py
+# Error: File must be an .ipynb, .md, or .py file
+```
+
+### Already a marimo Notebook
+
+```bash
+marimo convert existing.py -o output.py
+# Output: "File is already a valid marimo notebook."
+```
+
+## Tips
+
+- Always review converted notebooks for potential issues
+- Use `-o` to save the output, or pipe to inspect the conversion
+- For large Jupyter notebooks, consider splitting into smaller marimo notebooks
+- Test converted notebooks thoroughly, especially if they have complex dependencies
+
+## Related Commands
+
+- [marimo edit](/cli/edit) - Edit converted notebooks
+- [marimo export](/cli/export) - Export marimo notebooks to other formats

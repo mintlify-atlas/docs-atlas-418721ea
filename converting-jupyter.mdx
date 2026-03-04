@@ -1,0 +1,479 @@
+---
+title: Converting from Jupyter
+description: Migrate Jupyter notebooks to marimo's reactive format
+---
+
+marimo provides tools to convert Jupyter notebooks (`.ipynb`) and other formats to reactive marimo notebooks.
+
+## Convert Command
+
+The `marimo convert` command transforms various formats into marimo notebooks.
+
+### Basic Conversion
+
+```bash
+# Convert Jupyter notebook
+marimo convert notebook.ipynb -o notebook.py
+
+# Convert and print to stdout
+marimo convert notebook.ipynb
+
+# Auto-accept all prompts
+marimo -y convert notebook.ipynb -o notebook.py
+```
+
+<Note>
+After conversion, open the notebook with:
+
+```bash
+marimo edit notebook.py
+```
+</Note>
+
+## Supported Formats
+
+marimo can convert from multiple source formats:
+
+<AccordionGroup>
+  <Accordion title="Jupyter Notebooks (.ipynb)">
+    Converts Jupyter notebooks to marimo format:
+
+    ```bash
+    marimo convert analysis.ipynb -o analysis.py
+    ```
+
+    **What gets converted:**
+    - Code cells → marimo cells
+    - Markdown cells → `mo.md()` cells
+    - Cell execution order → dependency graph
+
+    **What gets stripped:**
+    - All cell outputs (regenerated when you run the notebook)
+    - Jupyter metadata
+    - Execution counts
+  </Accordion>
+
+  <Accordion title="Markdown Files (.md, .qmd)">
+    Converts markdown files with Python code fences:
+
+    ```bash
+    marimo convert document.md -o notebook.py
+    ```
+
+    **Requirements:**
+    - Code blocks must use `{python}` fence notation:
+
+    ````markdown
+    # Analysis
+
+    ```{python}
+    import pandas as pd
+    df = pd.read_csv("data.csv")
+    ```
+
+    ```{python}
+    df.head()
+    ```
+    ````
+  </Accordion>
+
+  <Accordion title="Python Scripts (.py)">
+    Converts Python scripts to marimo notebooks:
+
+    ```bash
+    marimo convert script.py -o notebook.py
+    ```
+
+    **Supported formats:**
+    - **py:percent format** (VSCode/PyCharm style):
+
+    ```python
+    # %%
+    import pandas as pd
+
+    # %%
+    df = pd.read_csv("data.csv")
+
+    # %%
+    df.head()
+    ```
+
+    - **Plain scripts**: marimo attempts intelligent conversion
+
+    <Warning>
+    Requires `jupytext` for script conversion:
+
+    ```bash
+    pip install jupytext
+    marimo convert script.py -o notebook.py
+    ```
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Conversion Process
+
+<Steps>
+  <Step title="Identify the format">
+    marimo detects the file type by extension:
+
+    - `.ipynb` → Jupyter notebook
+    - `.md` or `.qmd` → Markdown document
+    - `.py` → Python script
+  </Step>
+
+  <Step title="Parse the content">
+    Extract code cells, markdown, and dependencies:
+
+    - Jupyter: Reads notebook JSON structure
+    - Markdown: Parses `{python}` code fences
+    - Scripts: Identifies cell boundaries (requires jupytext)
+  </Step>
+
+  <Step title="Build dependency graph">
+    marimo analyzes variable usage to create the reactive graph:
+
+    ```python
+    # Cell 1 defines x
+    x = 10
+
+    # Cell 2 uses x → depends on Cell 1
+    y = x * 2
+
+    # Cell 3 uses y → depends on Cell 2
+    print(y)
+    ```
+  </Step>
+
+  <Step title="Generate marimo notebook">
+    Creates a `.py` file with marimo's structure:
+
+    ```python
+    import marimo
+
+    app = marimo.App()
+
+    @app.cell
+    def __():
+        x = 10
+        return (x,)
+
+    @app.cell
+    def __(x):
+        y = x * 2
+        return (y,)
+    ```
+  </Step>
+</Steps>
+
+## What Gets Converted
+
+### Code Cells ✓
+
+Jupyter code cells become marimo cells:
+
+<CodeGroup>
+```python Jupyter
+# Cell 1
+import pandas as pd
+df = pd.read_csv("data.csv")
+
+# Cell 2
+df.describe()
+```
+
+```python marimo
+@app.cell
+def __():
+    import pandas as pd
+    df = pd.read_csv("data.csv")
+    return df, pd
+
+@app.cell
+def __(df):
+    df.describe()
+    return
+```
+</CodeGroup>
+
+### Markdown Cells ✓
+
+Markdown becomes `mo.md()` calls:
+
+<CodeGroup>
+```markdown Jupyter
+# Data Analysis
+
+This notebook analyzes **sales data**.
+```
+
+```python marimo
+@app.cell
+def __(mo):
+    mo.md(
+        r"""
+        # Data Analysis
+
+        This notebook analyzes **sales data**.
+        """
+    )
+    return
+```
+</CodeGroup>
+
+### Cell Outputs ✗
+
+Outputs are NOT preserved:
+
+- Plots, tables, and text outputs are stripped
+- Re-run the notebook to regenerate outputs
+- This ensures fresh, reproducible results
+
+<Tip>
+marimo's reactivity means outputs update automatically as you edit - no need to manually re-run cells!
+</Tip>
+
+## Manual Adjustments
+
+After conversion, you may need to refactor code that doesn't fit marimo's reactive model.
+
+### Variable Mutations
+
+<Warning>
+marimo doesn't allow multiple cells to define the same variable.
+</Warning>
+
+<CodeGroup>
+```python Jupyter (multiple definitions)
+# Cell 1
+df = pd.read_csv("data.csv")
+
+# Cell 2
+df = df[df['age'] > 18]  # ❌ Redefining df
+
+# Cell 3
+df = df.dropna()  # ❌ Redefining df again
+```
+
+```python marimo (single definition)
+@app.cell
+def __():
+    import pandas as pd
+    raw_df = pd.read_csv("data.csv")
+    return pd, raw_df
+
+@app.cell
+def __(raw_df):
+    # Single transformation pipeline
+    df = (
+        raw_df
+        [raw_df['age'] > 18]
+        .dropna()
+    )
+    return (df,)
+```
+</CodeGroup>
+
+### Side Effects
+
+Minimize global state and side effects:
+
+<CodeGroup>
+```python Avoid - Global mutations
+# Cell 1
+results = []
+
+# Cell 2
+results.append(calculate_a())  # ❌ Mutating global
+
+# Cell 3
+results.append(calculate_b())  # ❌ Mutating global
+```
+
+```python Better - Pure functions
+@app.cell
+def __():
+    result_a = calculate_a()
+    return (result_a,)
+
+@app.cell
+def __():
+    result_b = calculate_b()
+    return (result_b,)
+
+@app.cell
+def __(result_a, result_b):
+    results = [result_a, result_b]
+    return (results,)
+```
+</CodeGroup>
+
+### Display Order
+
+Jupyter executes top-to-bottom; marimo executes by dependency:
+
+<CodeGroup>
+```python Jupyter (execution order matters)
+# Cell 1
+x = 10
+
+# Cell 2 (must run after Cell 1)
+y = x + 5
+
+# Cell 3 (must run after Cell 2)
+print(y)
+```
+
+```python marimo (automatic ordering)
+# Cells can be in any order!
+# marimo figures out dependencies
+
+@app.cell
+def __(y):
+    # Cell 3
+    print(y)
+    return
+
+@app.cell
+def __():
+    # Cell 1
+    x = 10
+    return (x,)
+
+@app.cell
+def __(x):
+    # Cell 2
+    y = x + 5
+    return (y,)
+```
+</CodeGroup>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Import Error: jupytext">
+    **Problem:** Converting Python scripts fails with missing `jupytext`.
+
+    **Solution:**
+    ```bash
+    pip install jupytext
+    marimo convert script.py -o notebook.py
+    ```
+  </Accordion>
+
+  <Accordion title="Multiple Definition Error">
+    **Problem:** Cells redefine the same variable.
+
+    **Solution:** Refactor to define each variable in only one cell:
+
+    ```python
+    # Instead of modifying df multiple times,
+    # create a single transformation pipeline
+    df_clean = (
+        df
+        .filter(...)
+        .transform(...)
+        .dropna()
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Syntax Errors">
+    **Problem:** File has syntax errors.
+
+    **Solution:** Fix syntax errors in the original file before conversion:
+
+    ```bash
+    # Check syntax
+    python -m py_compile notebook.ipynb
+    ```
+  </Accordion>
+
+  <Accordion title="Already a marimo Notebook">
+    **Problem:** File is already in marimo format.
+
+    **Solution:** No conversion needed! Just open it:
+
+    ```bash
+    marimo edit notebook.py
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Conversion Checklist
+
+After converting, verify these items:
+
+- [ ] All cells execute without errors
+- [ ] No multiple definitions of the same variable
+- [ ] Dependencies are correctly detected
+- [ ] Markdown cells render properly
+- [ ] Imports are in the first cell
+- [ ] No hidden state or global mutations
+- [ ] Outputs regenerate correctly
+
+## Remote Notebooks
+
+Convert notebooks hosted on GitHub:
+
+```bash
+# Convert from URL
+marimo convert https://github.com/user/repo/blob/main/notebook.ipynb -o local.py
+
+# Then edit
+marimo edit local.py
+```
+
+## Batch Conversion
+
+Convert multiple notebooks:
+
+```bash
+# Convert all notebooks in a directory
+for file in notebooks/*.ipynb; do
+  marimo convert "$file" -o "marimo/${file%.ipynb}.py"
+done
+```
+
+## Comparing with Jupyter
+
+| Feature | Jupyter | marimo |
+|---------|---------|--------|
+| File format | JSON (`.ipynb`) | Python (`.py`) |
+| Execution | Manual, top-to-bottom | Automatic, reactive |
+| Hidden state | Possible | Prevented |
+| Version control | Difficult (JSON) | Easy (Python) |
+| Reproducibility | Order-dependent | Guaranteed |
+| Diffs | Noisy JSON | Clean Python |
+| Collaboration | Merge conflicts | Standard Git workflow |
+
+## Why Convert?
+
+<CardGroup cols={2}>
+  <Card title="Better Version Control" icon="git">
+    Plain Python files are easier to diff, merge, and review.
+  </Card>
+
+  <Card title="Reproducibility" icon="check">
+    marimo's reactivity eliminates hidden state issues.
+  </Card>
+
+  <Card title="Interactivity" icon="sliders">
+    Built-in UI elements without writing JavaScript.
+  </Card>
+
+  <Card title="Deployment" icon="rocket">
+    Run as scripts, apps, or export to multiple formats.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Creating Notebooks" icon="plus" href="/creating-notebooks">
+    Learn marimo's cell structure
+  </Card>
+  <Card title="Package Management" icon="package" href="/package-management">
+    Add dependencies to your notebooks
+  </Card>
+</CardGroup>

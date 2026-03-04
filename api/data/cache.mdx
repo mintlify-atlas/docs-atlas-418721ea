@@ -1,0 +1,99 @@
+---
+title: cache
+---
+
+Cache the value of a function based on args and closed-over variables.
+
+Decorating a function with `@mo.cache` will cache its value based on the function's arguments, closed-over values, and the notebook code.
+
+## Usage
+
+### Function Decorator
+
+```python
+import marimo as mo
+
+@mo.cache
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+```
+
+### Context Manager
+
+```python
+with mo.cache("my_cache") as cache:
+    variable = expensive_function()
+```
+
+## Signature
+
+### As Decorator
+
+```python
+@mo.cache(
+    pin_modules: bool = False,
+    loader: LoaderPartial | LoaderType = MemoryLoader
+)
+def function():
+    ...
+```
+
+### As Context Manager
+
+```python
+with mo.cache(
+    name: str,
+    pin_modules: bool = False,
+    loader: LoaderPartial | Loader | LoaderType = MemoryLoader
+) as cache:
+    ...
+```
+
+## Parameters
+
+<ParamField path="pin_modules" type="bool" default="False">
+  If `True`, the cache will be invalidated if module versions differ.
+</ParamField>
+
+<ParamField path="loader" type="LoaderPartial | LoaderType" default="MemoryLoader">
+  The loader to use for the cache. Defaults to `MemoryLoader`.
+</ParamField>
+
+<ParamField path="name" type="str" required="(context manager only)">
+  The name of the cache, used to set saving path. To manually invalidate the cache, change the name.
+</ParamField>
+
+## Benefits over functools.cache
+
+`mo.cache` is similar to `functools.cache`, but with three key benefits:
+
+1. `mo.cache` persists its cache even if the cell defining the cached function is re-run, as long as the code defining the function and ancestors (excluding comments and formatting) has not changed.
+
+2. `mo.cache` keys on closed-over values in addition to function arguments, preventing accumulation of hidden state associated with `functools.cache`.
+
+3. `mo.cache` does not require its arguments to be hashable (only pickleable), meaning it can work with lists, sets, NumPy arrays, PyTorch tensors, and more.
+
+`mo.cache` obtains these benefits at the cost of slightly higher overhead than `functools.cache`, so it is best used for expensive functions.
+
+Like `functools.cache`, `mo.cache` is thread-safe.
+
+The cache has an unlimited maximum size. To limit the cache size, use `@mo.lru_cache`. `mo.cache` is slightly faster than `mo.lru_cache`, but in most applications the difference is negligible.
+
+## Async Functions
+
+`mo.cache` automatically detects and supports async functions:
+
+```python
+@mo.cache
+async def fetch_data(url):
+    # async implementation
+    ...
+```
+
+## Context Manager
+
+The `mo.cache` context manager lets you delimit a block of code in which variables will be cached to memory when they are first computed.
+
+By default, the cache is stored in memory and is not persisted across kernel runs. For persistent caching, use `mo.persistent_cache`.

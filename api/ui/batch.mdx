@@ -1,0 +1,112 @@
+---
+title: 'Batch'
+description: 'Combine multiple UI elements'
+---
+
+# mo.ui.batch
+
+Combine multiple UI elements into a single object.
+
+## Overview
+
+Batch allows you to group UI elements created with markdown or HTML and access their values as a dictionary.
+
+## Usage
+
+```python
+batched = mo.md("...").batch()
+```
+
+Or directly:
+
+```python
+mo.ui.batch(html, elements_dict)
+```
+
+## Examples
+
+```python
+import marimo as mo
+
+# Create form with multiple inputs
+form = mo.md(
+    f"""
+    **Login Form**
+    
+    Username: {mo.ui.text(placeholder="username")}
+    Password: {mo.ui.text(kind="password")}
+    Remember me: {mo.ui.checkbox()}
+    """
+).batch()
+
+form
+```
+
+```python
+# Access individual values
+username = form.value[0]  # First element
+password = form.value[1]  # Second element
+remember = form.value[2]  # Third element
+```
+
+```python
+# Named elements using dictionary
+from marimo import Html
+
+elements = {
+    "name": mo.ui.text(placeholder="Name"),
+    "age": mo.ui.number(start=0, stop=120),
+    "email": mo.ui.text(kind="email")
+}
+
+html = Html("""
+<div>
+    <label>Name: {name}</label>
+    <label>Age: {age}</label>
+    <label>Email: {email}</label>
+</div>
+""")
+
+form = mo.ui.batch(html, elements)
+
+# Access by name
+mo.md(f"Name: {form.value['name']}")
+```
+
+## With Forms
+
+Combine `batch()` with `form()` to create submittable forms:
+
+```python
+form = mo.md(
+    f"""
+    Name: {mo.ui.text()}
+    Email: {mo.ui.text(kind="email")}
+    """
+).batch().form()
+
+# Values only update on submit
+if form.value:
+    name, email = form.value
+    mo.md(f"Welcome, {name}!")
+```
+
+## Return Value
+
+- When created from markdown with `.batch()`: returns list of values
+- When created with `mo.ui.batch(html, dict)`: returns dictionary of values
+
+<Tip>
+Use batch to create complex forms with multiple related inputs.
+</Tip>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Form" icon="rectangle-list" href="/api/ui/form">
+    Create submittable forms
+  </Card>
+  <Card title="Dictionary" icon="book" href="/api/ui/dictionary">
+    Create dictionaries of UI elements
+  </Card>
+</CardGroup>

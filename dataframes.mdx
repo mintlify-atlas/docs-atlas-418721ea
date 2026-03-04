@@ -1,0 +1,268 @@
+---
+title: Interactive DataFrames
+description: Display and transform DataFrames with marimo's interactive dataframe viewer
+---
+
+marimo provides powerful interactive dataframe components that let you explore, filter, sort, and transform your data directly in the UI.
+
+## Supported Libraries
+
+marimo supports multiple dataframe libraries:
+
+- **pandas** - The most popular Python data analysis library
+- **polars** - High-performance DataFrame library
+- **pyarrow** - Apache Arrow in Python
+- **ibis** - Unified interface for SQL and dataframes
+- **DuckDB** - In-process SQL database
+
+All dataframe operations use [narwhals](https://narwhals-dev.github.io/narwhals/) under the hood for efficient, library-agnostic transformations.
+
+## Basic Usage
+
+<CodeGroup>
+
+```python Pandas
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [25, 30, 35],
+    "city": ["NYC", "SF", "LA"]
+})
+
+mo.ui.dataframe(df)
+```
+
+```python Polars
+import marimo as mo
+import polars as pl
+
+df = pl.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [25, 30, 35],
+    "city": ["NYC", "SF", "LA"]
+})
+
+mo.ui.dataframe(df)
+```
+
+</CodeGroup>
+
+## Interactive Transformations
+
+The `mo.ui.dataframe` component allows users to apply transformations through the UI:
+
+<Steps>
+
+### Filter Rows
+
+Click the filter icon to add conditions:
+- Comparison operators: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- String operations: `contains`, `starts_with`, `ends_with`, `regex`
+- Null checks: `is_null`, `is_not_null`
+- Set operations: `in`, `not_in`
+
+### Sort Columns
+
+Click column headers to sort ascending or descending, with control over NA position.
+
+### Select Columns
+
+Choose which columns to display using the column selector.
+
+### Aggregate Data
+
+Group by columns and apply aggregations:
+- `count`, `sum`, `mean`, `median`, `min`, `max`
+
+### Advanced Operations
+
+- **Rename columns** - Change column names
+- **Convert types** - Change data types with error handling
+- **Sample rows** - Random sampling with or without replacement
+- **Shuffle rows** - Randomize row order
+- **Remove duplicates** - Keep first, last, or no duplicates
+
+</Steps>
+
+## Accessing Transformed Data
+
+```python
+import marimo as mo
+import pandas as pd
+
+df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+df_widget = mo.ui.dataframe(df)
+```
+
+In another cell:
+
+```python
+# Access the transformed dataframe
+transformed_df = df_widget.value
+
+# The transformed data is in the same format as the input
+type(transformed_df)  # pandas.DataFrame
+```
+
+## Configuration Options
+
+```python
+mo.ui.dataframe(
+    df,
+    page_size=10,              # Rows per page
+    show_download=True,        # Show download button
+    lazy=False,                # Apply transforms immediately
+    limit=10000,               # Load limit for remote data
+    format_mapping={           # Format specific columns
+        "price": "${:.2f}".format,
+        "percentage": lambda x: f"{x*100:.1f}%"
+    }
+)
+```
+
+### Format Mapping
+
+Customize how values are displayed:
+
+```python
+import marimo as mo
+import pandas as pd
+
+def format_name(name):
+    return name.upper()
+
+df = pd.DataFrame({
+    "name": ["alice", "bob"],
+    "score": [95.5, 87.3]
+})
+
+mo.ui.dataframe(
+    df,
+    format_mapping={
+        "name": format_name,
+        "score": "{:.1f}".format
+    }
+)
+```
+
+## Lazy Evaluation
+
+For large datasets or lazy dataframes (Polars LazyFrame, Ibis), marimo automatically enables lazy mode:
+
+```python
+import polars as pl
+import marimo as mo
+
+# LazyFrame - transformations build a query plan
+lazy_df = pl.scan_csv("large_file.csv")
+
+# Lazy mode enabled automatically
+mo.ui.dataframe(lazy_df)
+```
+
+With lazy mode, an "Apply" button appears - transformations are only executed when clicked.
+
+## Export Options
+
+Users can download transformed data in multiple formats:
+
+- **CSV** - With configurable encoding and separator
+- **JSON** - With ASCII encoding option  
+- **Parquet** - Efficient columnar format
+
+```python
+mo.ui.dataframe(
+    df,
+    download_csv_encoding="utf-8-sig",  # Include BOM for Excel
+    download_csv_separator=";",          # Use semicolon
+    download_json_ensure_ascii=True      # Escape non-ASCII
+)
+```
+
+## Code Generation
+
+marimo can generate Python code for the transformations applied in the UI:
+
+```python
+df_widget = mo.ui.dataframe(df)
+
+# After applying transformations in the UI
+transformed = df_widget.value
+
+# Get the equivalent Python code
+# This is available internally and shown in the UI
+```
+
+<Tip>
+Transformations are reactive - when you apply filters or sorts in the UI, `df_widget.value` automatically updates in dependent cells.
+</Tip>
+
+## Selection and Tables
+
+For row/cell selection without transformations, use `mo.ui.table` instead:
+
+```python
+table = mo.ui.table(
+    df,
+    selection="multi",  # or "single", "single-cell", "multi-cell"
+    pagination=True
+)
+
+# Access selected rows
+selected = table.value
+```
+
+See the [Tables](/docs/guides/working-with-data/tables) guide for more details.
+
+## Performance Tips
+
+<Note>
+For DataFrames with more than 100,000 rows, lazy mode is automatically enabled to prevent loading all data into memory.
+</Note>
+
+- Use `limit` parameter for remote/lazy data sources
+- Enable `lazy=True` for expensive transformations
+- Consider Polars LazyFrame for very large datasets
+- Use `page_size` to control initial rendering cost
+
+## Example: Complete Workflow
+
+```python
+import marimo as mo
+import pandas as pd
+
+# Create sample data
+df = pd.DataFrame({
+    "product": ["A", "B", "C", "A", "B"],
+    "sales": [100, 150, 200, 120, 180],
+    "region": ["North", "South", "North", "South", "North"],
+    "date": pd.date_range("2024-01-01", periods=5)
+})
+
+# Create interactive dataframe
+df_widget = mo.ui.dataframe(
+    df,
+    page_size=5,
+    format_mapping={
+        "sales": "${:,.0f}".format
+    }
+)
+```
+
+In another cell:
+
+```python
+# Use transformed data for analysis
+filtered_df = df_widget.value
+
+# The dataframe reflects all UI transformations
+mo.md(f"""
+## Analysis Results
+
+Total Sales: ${filtered_df['sales'].sum():,.0f}
+
+Average: ${filtered_df['sales'].mean():,.2f}
+""")
+```

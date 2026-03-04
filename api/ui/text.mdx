@@ -1,0 +1,96 @@
+---
+title: 'Text'
+description: 'Text input field'
+---
+
+# mo.ui.text
+
+Create a text input field for user input.
+
+## Signature
+
+```python
+mo.ui.text(
+    value: str = "",
+    placeholder: str = "",
+    kind: Literal["text", "password", "email", "url"] = "text",
+    max_length: int | None = None,
+    disabled: bool = False,
+    debounce: bool | int = True,
+    *,
+    label: str = "",
+    on_change: Callable[[str], None] | None = None,
+    full_width: bool = False
+)
+```
+
+## Parameters
+
+<ParamField path="value" type="str" default="''">
+  Initial text value
+</ParamField>
+
+<ParamField path="placeholder" type="str" default="''">
+  Placeholder text shown when empty
+</ParamField>
+
+<ParamField path="kind" type="'text' | 'password' | 'email' | 'url'" default="'text'">
+  Type of input field
+</ParamField>
+
+<ParamField path="max_length" type="int">
+  Maximum number of characters allowed
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether the input is disabled
+</ParamField>
+
+<ParamField path="debounce" type="bool | int" default="True">
+  Debounce input updates (True for default delay, or specify milliseconds)
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the input
+</ParamField>
+
+<ParamField path="full_width" type="bool" default="False">
+  Whether input takes full width
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+
+# Basic text input
+name = mo.ui.text(placeholder="Enter your name")
+name
+```
+
+```python
+# Email input with validation
+email = mo.ui.text(
+    kind="email",
+    placeholder="user@example.com",
+    label="**Email address**"
+)
+```
+
+```python
+# Password input
+password = mo.ui.text(
+    kind="password",
+    placeholder="Enter password",
+    max_length=50
+)
+```
+
+```python
+# Use the value
+mo.md(f"Hello, {name.value}!")
+```
+
+<Note>
+By default, text inputs are debounced to avoid excessive updates while typing.
+</Note>

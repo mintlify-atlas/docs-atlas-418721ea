@@ -1,0 +1,69 @@
+---
+title: video
+---
+
+Render a video as HTML.
+
+## Usage
+
+```python
+mo.video(
+    src="https://v3.cdnpk.net/videvo_files/video/free/2013-08/large_watermarked/hd0992_preview.mp4",
+    controls=False,
+)
+```
+
+## Signature
+
+```python
+mo.video(
+    src: Union[str, bytes, io.BytesIO, io.BufferedReader],
+    controls: bool = True,
+    muted: bool = False,
+    autoplay: bool = False,
+    loop: bool = False,
+    width: Optional[Union[int, str]] = None,
+    height: Optional[Union[int, str]] = None,
+    rounded: bool = False
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="src" type="Union[str, bytes, io.BytesIO, io.BufferedReader]" required>
+  The URL of the video or a file-like object.
+</ParamField>
+
+<ParamField path="controls" type="bool" default="True">
+  Whether to show the controls.
+</ParamField>
+
+<ParamField path="muted" type="bool" default="False">
+  Whether to mute the video.
+</ParamField>
+
+<ParamField path="autoplay" type="bool" default="False">
+  Whether to autoplay the video. The video will only autoplay if `muted` is `True`.
+</ParamField>
+
+<ParamField path="loop" type="bool" default="False">
+  Whether to loop the video.
+</ParamField>
+
+<ParamField path="width" type="Optional[Union[int, str]]" default="None">
+  The width of the video in pixels or a string with units.
+</ParamField>
+
+<ParamField path="height" type="Optional[Union[int, str]]" default="None">
+  The height of the video in pixels or a string with units.
+</ParamField>
+
+<ParamField path="rounded" type="bool" default="False">
+  Whether to round the corners of the video.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An `Html` object.
+</ParamField>

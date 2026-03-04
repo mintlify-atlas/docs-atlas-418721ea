@@ -1,0 +1,80 @@
+---
+title: 'Radio'
+description: 'Radio button group for single selection'
+---
+
+# mo.ui.radio
+
+Create a radio button group for selecting one option.
+
+## Signature
+
+```python
+mo.ui.radio(
+    options: Sequence[str] | dict[str, Any],
+    value: str | None = None,
+    inline: bool = False,
+    *,
+    label: str = "",
+    on_change: Callable[[Any], None] | None = None,
+    disabled: bool = False
+)
+```
+
+## Parameters
+
+<ParamField path="options" type="Sequence[str] | dict[str, Any]" required>
+  List of options or dictionary mapping labels to values
+</ParamField>
+
+<ParamField path="value" type="str">
+  Initially selected value
+</ParamField>
+
+<ParamField path="inline" type="bool" default="False">
+  Display options horizontally instead of vertically
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the radio group
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether the radio buttons are disabled
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+
+# Basic radio buttons
+color = mo.ui.radio(
+    options=["Red", "Green", "Blue"],
+    value="Red",
+    label="**Choose a color:**"
+)
+color
+```
+
+```python
+# Inline radio buttons
+size = mo.ui.radio(
+    options=["Small", "Medium", "Large"],
+    inline=True
+)
+```
+
+```python
+# Radio with value mapping
+priority = mo.ui.radio(
+    options={
+        "Low priority": 1,
+        "Medium priority": 2,
+        "High priority": 3
+    },
+    value=2
+)
+
+mo.md(f"Selected priority level: {priority.value}")
+```

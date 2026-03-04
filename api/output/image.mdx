@@ -1,0 +1,86 @@
+---
+title: image
+---
+
+Render an image as HTML.
+
+## Usage
+
+```python
+# Render an image from a local file
+mo.image(src="path/to/image.png")
+```
+
+```python
+# Render an image from a URL
+mo.image(
+    src="https://marimo.io/logo.png",
+    alt="Marimo logo",
+    width=100,
+    height=100,
+    rounded=True,
+    caption="Marimo logo",
+)
+```
+
+## Signature
+
+```python
+mo.image(
+    src: ImageLike,
+    alt: Optional[str] = None,
+    width: Optional[Union[int, str]] = None,
+    height: Optional[Union[int, str]] = None,
+    rounded: bool = False,
+    style: Optional[dict[str, Any]] = None,
+    caption: Optional[str] = None
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="src" type="ImageLike" required>
+  A path or URL to an image, a file-like object (opened in binary mode), or array-like object.
+</ParamField>
+
+<ParamField path="alt" type="Optional[str]" default="None">
+  The alt text of the image.
+</ParamField>
+
+<ParamField path="width" type="Optional[Union[int, str]]" default="None">
+  The width of the image in pixels or a string with units.
+</ParamField>
+
+<ParamField path="height" type="Optional[Union[int, str]]" default="None">
+  The height of the image in pixels or a string with units.
+</ParamField>
+
+<ParamField path="rounded" type="bool" default="False">
+  Whether to round the corners of the image.
+</ParamField>
+
+<ParamField path="style" type="Optional[dict[str, Any]]" default="None">
+  A dictionary of CSS styles to apply to the image.
+</ParamField>
+
+<ParamField path="caption" type="Optional[str]" default="None">
+  The caption of the image.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An `Html` object.
+</ParamField>
+
+## Supported Input Types
+
+The `src` parameter accepts:
+- `str`: Path or URL to an image
+- `bytes`: Image data as bytes
+- `io.BytesIO`: File-like object in binary mode
+- `io.BufferedReader`: Buffered file reader
+- `Path`: pathlib.Path object
+- Array-like objects: lists, numpy arrays, torch tensors, jax arrays, scipy sparse matrices
+
+For array-like objects, the image will be normalized and converted to PNG format.

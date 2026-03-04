@@ -1,0 +1,275 @@
+---
+title: 'marimo run'
+description: 'Run marimo notebooks as read-only web applications'
+---
+
+# marimo run
+
+Run one or more marimo notebooks as read-only web applications. Perfect for sharing interactive dashboards and apps.
+
+## Usage
+
+```bash
+marimo run NAME [NAME...] [OPTIONS] [-- ARGS...]
+```
+
+## Arguments
+
+**NAME** - Path to notebook file(s) or directory(ies) to run (required)
+- Can specify multiple files or directories
+- If a directory is provided, all marimo notebooks in it will be available
+- Supports URLs for remote notebooks
+- When multiple paths are provided, creates a gallery view
+
+**ARGS** - Arguments to pass to the notebook (after `--`)
+- All arguments after `--` are passed to the notebook's `sys.argv`
+
+## Options
+
+### Server Configuration
+
+**-p, --port PORT** - Port to attach to
+- Type: Integer
+- Default: Auto-assigned
+
+**--host HOST** - Host to attach to
+- Type: String
+- Default: `127.0.0.1`
+
+**--proxy PROXY** - Address of reverse proxy
+- Type: String
+
+**--base-url URL** - Base URL for the server (should start with `/`)
+- Type: String
+- Default: `""`
+
+### Browser & UI
+
+**--headless** - Don't launch a browser
+- Type: Flag
+- Default: `False`
+
+**--include-code** - Include notebook code in the app
+- Type: Flag
+- Default: `False`
+- When enabled, users can view the source code
+
+### Authentication
+
+**--token / --no-token** - Use token for authentication
+- Type: Flag
+- Default: `False`
+
+**--token-password PASSWORD** - Use a specific token for authentication
+- Type: String
+
+**--token-password-file FILE** - Path to file containing token password, or `-` for stdin
+- Type: String
+
+### Security & CORS
+
+**--allow-origins ORIGIN** - Allowed origins for CORS
+- Type: String (can be repeated)
+
+**--trusted / --untrusted** - Run notebooks hosted remotely
+- If `--untrusted`, runs marimo in a Docker container
+
+### Development Features
+
+**--watch** - Watch files for changes and reload the app
+- Type: Flag
+- Default: `False`
+- Uses `watchdog` if installed, otherwise polls every 1 second
+
+**--skew-protection / --no-skew-protection** - Enable skew protection middleware
+- Type: Flag
+- Default: `True`
+
+### Console & Debugging
+
+**--redirect-console-to-browser** - Redirect console logs to browser console
+- Type: Flag
+- Default: `False`
+
+### Validation
+
+**--check / --no-check** - Perform static check of notebook before running
+- Type: Flag
+- Default: `True`
+- Validates notebook for errors before starting
+
+### Sandbox & Isolation
+
+**--sandbox / --no-sandbox** - Run in an isolated virtual environment
+- Type: Flag
+- For multiple files/directories, uses IPC kernels with per-notebook sandboxed environments
+- Requires `uv` and `pyzmq`
+
+### Session Management
+
+**--session-ttl SECONDS** - Seconds to wait before closing a session on websocket disconnect
+- Type: Integer
+- Default: `120`
+
+## Examples
+
+### Basic Usage
+
+```bash
+# Run a single notebook
+marimo run notebook.py
+
+# Run multiple notebooks (creates a gallery)
+marimo run app1.py app2.py app3.py
+
+# Run all notebooks in a directory
+marimo run notebooks/
+
+# Run notebooks from multiple directories
+marimo run folder1 folder2
+```
+
+### Custom Server Configuration
+
+```bash
+# Run on a specific port
+marimo run app.py --port 8080
+
+# Run on all network interfaces
+marimo run app.py --host 0.0.0.0 --port 8080
+
+# Run headless (no browser)
+marimo run app.py --headless
+```
+
+### Including Code
+
+```bash
+# Show notebook code to users
+marimo run app.py --include-code
+```
+
+### Authentication
+
+```bash
+# Enable token authentication
+marimo run app.py --token
+
+# Use a specific token
+marimo run app.py --token-password mysecrettoken
+```
+
+### Development Workflow
+
+```bash
+# Watch for changes and auto-reload
+marimo run app.py --watch
+
+# Watch with code visible
+marimo run app.py --watch --include-code
+
+# Disable pre-run checks for faster iteration
+marimo run app.py --no-check
+```
+
+### Remote Notebooks
+
+```bash
+# Run a remote notebook
+marimo run https://raw.githubusercontent.com/user/repo/main/app.py
+
+# Trust remote notebooks automatically
+marimo run https://example.com/app.py --trusted
+```
+
+### Passing Arguments to Notebook
+
+```bash
+# Pass arguments to the notebook
+marimo run app.py -- --config config.json --verbose
+
+# With multiple notebooks (arguments apply to all)
+marimo run app1.py app2.py -- --shared-arg value
+```
+
+Access arguments in your notebook:
+
+```python
+import sys
+import marimo as mo
+
+# sys.argv contains the arguments after --
+config_file = sys.argv[sys.argv.index('--config') + 1]
+```
+
+### Gallery Mode
+
+```bash
+# Create a gallery of notebooks
+marimo run dashboards/ analytics/
+
+# Watch a directory for new notebooks
+marimo run dashboards/ --watch
+```
+
+### Sandbox Mode
+
+```bash
+# Run in isolated environment (single notebook)
+marimo run app.py --sandbox
+
+# Run gallery with per-notebook sandboxes
+marimo run notebooks/ --sandbox
+```
+
+### Production Deployment
+
+```bash
+# Run headless with authentication on a specific port
+marimo run app.py \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --headless \
+  --token-password-file /secrets/token \
+  --no-check
+
+# Behind a reverse proxy
+marimo run app.py \
+  --host 127.0.0.1 \
+  --port 8080 \
+  --headless \
+  --base-url /apps/myapp \
+  --proxy https://example.com
+```
+
+### CORS Configuration
+
+```bash
+# Allow specific origins
+marimo run app.py --allow-origins https://example.com
+
+# Allow multiple origins
+marimo run app.py \
+  --allow-origins https://example.com \
+  --allow-origins https://other.com
+```
+
+### Console Output
+
+```bash
+# Redirect Python print() to browser console
+marimo run app.py --redirect-console-to-browser
+```
+
+## Tips
+
+- Use `--watch` during development to see changes immediately
+- Enable `--include-code` for educational or open-source apps
+- Use `--sandbox` for untrusted notebooks or to isolate dependencies
+- For production, combine `--headless`, `--host 0.0.0.0`, and `--token`
+- Gallery mode is great for creating dashboards or app collections
+
+## Related Commands
+
+- [marimo edit](/cli/edit) - Edit notebooks interactively
+- [marimo export](/cli/export) - Export notebooks to static formats

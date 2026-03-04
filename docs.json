@@ -1,122 +1,200 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "marimo",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#A463F2",
+    "light": "#D4B4FF",
+    "dark": "#7B2FD4"
   },
   "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/marimo-team/marimo"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/marimo-team/marimo",
+      "discord": "https://marimo.io/discord",
+      "twitter": "https://twitter.com/marimo_io"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
-              "development"
+              "installation",
+              "key-concepts"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "reactivity",
+              "interactive-elements",
+              "sql-queries",
+              "ai-code-generation",
+              "markdown"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Working with Notebooks",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "creating-notebooks",
+              "running-notebooks",
+              "sharing-notebooks",
+              "converting-jupyter",
+              "package-management"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Deployment",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "deploy-as-app",
+              "deploy-as-script",
+              "deploy-wasm",
+              "deployment-platforms"
+            ]
+          },
+          {
+            "group": "Data & Visualization",
+            "pages": [
+              "dataframes",
+              "plotting",
+              "sql-databases",
+              "data-explorer"
+            ]
+          },
+          {
+            "group": "Editor Features",
+            "pages": [
+              "code-completion",
+              "debugging",
+              "version-control",
+              "configuration",
+              "keyboard-shortcuts"
+            ]
+          },
+          {
+            "group": "Advanced Topics",
+            "pages": [
+              "state-management",
+              "expensive-notebooks",
+              "testing",
+              "custom-components",
+              "integrations"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "api/overview"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Core API",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/app",
+              "api/cell"
+            ]
+          },
+          {
+            "group": "UI Elements",
+            "pages": [
+              "api/ui/button",
+              "api/ui/slider",
+              "api/ui/dropdown",
+              "api/ui/text",
+              "api/ui/checkbox",
+              "api/ui/radio",
+              "api/ui/multiselect",
+              "api/ui/date",
+              "api/ui/file",
+              "api/ui/table",
+              "api/ui/dataframe",
+              "api/ui/chat",
+              "api/ui/form",
+              "api/ui/batch"
+            ]
+          },
+          {
+            "group": "Visualization",
+            "pages": [
+              "api/plotting/altair",
+              "api/plotting/matplotlib",
+              "api/plotting/plotly"
+            ]
+          },
+          {
+            "group": "Layout",
+            "pages": [
+              "api/layout/hstack",
+              "api/layout/vstack",
+              "api/layout/tabs",
+              "api/layout/accordion",
+              "api/layout/sidebar",
+              "api/layout/callout"
+            ]
+          },
+          {
+            "group": "Output",
+            "pages": [
+              "api/output/markdown",
+              "api/output/html",
+              "api/output/json",
+              "api/output/image",
+              "api/output/video",
+              "api/output/audio"
+            ]
+          },
+          {
+            "group": "Data",
+            "pages": [
+              "api/data/sql",
+              "api/data/cache",
+              "api/data/state"
+            ]
+          },
+          {
+            "group": "AI",
+            "pages": [
+              "api/ai/overview",
+              "api/ai/chat",
+              "api/ai/completion"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/overview",
+              "cli/edit",
+              "cli/run",
+              "cli/convert",
+              "cli/export",
+              "cli/tutorial",
+              "cli/config"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

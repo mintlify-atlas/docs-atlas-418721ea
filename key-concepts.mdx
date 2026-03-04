@@ -1,0 +1,499 @@
+---
+title: Key concepts
+description: Understand reactivity, cells, dataflow, and the core concepts that make marimo different
+---
+
+# Key concepts
+
+marimo introduces a new way of thinking about notebooks through reactive execution and dataflow graphs. This guide explains the fundamental concepts that power marimo.
+
+## Reactivity
+
+Reactivity is marimo's core feature: when you run a cell, marimo automatically runs all cells that depend on it.
+
+### How reactivity works
+
+marimo analyzes your code to build a dependency graph:
+
+```python
+import marimo as mo
+
+# Cell 1: Define a variable
+x = 10
+```
+
+```python
+# Cell 2: Use that variable
+y = x * 2
+mo.md(f"y = {y}")
+```
+
+When you change `x` in Cell 1, marimo automatically re-runs Cell 2. This keeps your notebook state consistent without manual intervention.
+
+### References and definitions
+
+marimo tracks two things for each cell:
+
+- **Definitions (defs)** - Global variables the cell creates or modifies
+- **References (refs)** - Global variables the cell reads
+
+You can inspect these:
+
+```python
+import marimo as mo
+
+# This cell defines 'result' and references 'data' and 'threshold'
+result = [x for x in data if x > threshold]
+
+# Check this cell's dependencies
+mo.md(f"""
+This cell:
+- Defines: {mo.defs()}
+- References: {mo.refs()}
+""")
+```
+
+### The dataflow graph
+
+marimo creates a directed acyclic graph (DAG) where:
+
+- **Nodes** represent cells
+- **Edges** represent dependencies between cells
+
+When you run a cell, marimo runs its descendants in topological order.
+
+<Note>
+  marimo prevents cycles in the dependency graph. If you try to create circular dependencies, marimo will show an error.
+</Note>
+
+### Lazy execution mode
+
+For expensive computations, you can disable automatic execution:
+
+1. Click the runtime dropdown in the notebook footer
+2. Change from "autorun" to "lazy"
+
+In lazy mode, marimo marks dependent cells as stale instead of running them automatically. You stay in control while maintaining state guarantees.
+
+## Cells
+
+A marimo notebook is composed of cells - small blocks of Python code that form the nodes of the dataflow graph.
+
+### Cell structure
+
+Cells in marimo are Python functions decorated with `@app.cell`:
+
+```python
+import marimo
+
+app = marimo.App()
+
+@app.cell
+def __():
+    import marimo as mo
+    import numpy as np
+    return mo, np
+
+@app.cell
+def __(mo, np):
+    slider = mo.ui.slider(1, 100, value=50)
+    slider
+    return slider,
+
+@app.cell
+def __(np, slider):
+    data = np.random.randn(slider.value)
+    return data,
+```
+
+Each cell:
+- Is a function that returns a tuple of variables to make global
+- Takes its dependencies as function parameters
+- Can have a descriptive name or use `__` for anonymous cells
+
+### No hidden state
+
+Unlike Jupyter, marimo prevents hidden state:
+
+- Variables only exist if their defining cell has run
+- Delete a cell and its variables are removed from memory
+- Cells cannot be run out of order
+
+```python
+# Cell 1
+x = 10
+```
+
+If you delete Cell 1, any cell referencing `x` will error - marimo won't let you use undefined variables.
+
+### Multiple definitions error
+
+You cannot define the same variable in multiple cells:
+
+```python
+# Cell 1
+x = 10  # ❌ Error: x defined here
+```
+
+```python
+# Cell 2
+x = 20  # ❌ Error: x also defined here
+```
+
+This prevents ambiguity about which definition is active.
+
+<Tip>
+  Use different variable names or combine related code into a single cell to avoid multiple definition errors.
+</Tip>
+
+## Interactive elements
+
+marimo's UI elements automatically trigger reactivity when their values change.
+
+### Creating UI elements
+
+Import from `marimo.ui`:
+
+```python
+import marimo as mo
+
+# Create interactive elements
+slider = mo.ui.slider(1, 100, value=50, label="Sample size")
+dropdown = mo.ui.dropdown(
+    options=["red", "green", "blue"],
+    value="red",
+    label="Color"
+)
+text_input = mo.ui.text(value="Hello", label="Message")
+
+# Display them
+mo.hstack([slider, dropdown, text_input])
+```
+
+### Accessing values
+
+Use `.value` to get the current value:
+
+```python
+import marimo as mo
+
+mo.md(f"""
+### Selected values
+
+- Sample size: {slider.value}
+- Color: {dropdown.value}
+- Message: {text_input.value}
+""")
+```
+
+When a user interacts with a UI element, marimo re-runs all cells that reference it.
+
+### Batching UI elements
+
+Combine multiple inputs into a single object:
+
+```python
+import marimo as mo
+
+form = mo.ui.batch(
+    slider=mo.ui.slider(1, 100),
+    color=mo.ui.dropdown(options=["red", "green", "blue"]),
+    enabled=mo.ui.checkbox(label="Enable feature")
+)
+
+form
+```
+
+Access batched values:
+
+```python
+if form.value["enabled"]:
+    process_data(
+        size=form.value["slider"],
+        color=form.value["color"]
+    )
+```
+
+### Forms
+
+Prevent UI elements from triggering updates until submitted:
+
+```python
+import marimo as mo
+
+form = mo.ui.form(
+    mo.md("""
+    ### Configuration
+    
+    {name}
+    {email}
+    {submit}
+    """).batch(
+        name=mo.ui.text(label="Name"),
+        email=mo.ui.text(label="Email"),
+        submit=mo.ui.button(label="Submit")
+    )
+)
+
+form
+```
+
+The form only updates dependent cells when submitted, not on every keystroke.
+
+## Notebooks vs apps vs scripts
+
+marimo notebooks can be used in three modes:
+
+### Edit mode (notebooks)
+
+Interactive development environment:
+
+```bash
+marimo edit notebook.py
+```
+
+- Full code editing
+- Interactive outputs
+- Cell execution controls
+- Variable inspector
+- Reactive updates
+
+Use for:
+- Data exploration
+- Research and analysis
+- Prototyping
+- Interactive development
+
+### Run mode (apps)
+
+Deploy as a web app:
+
+```bash
+marimo run notebook.py
+```
+
+- Code is hidden
+- Only UI elements and outputs shown
+- Still fully reactive
+- Professional presentation
+
+Use for:
+- Dashboards
+- Internal tools
+- Sharing with non-technical users
+- Demos and presentations
+
+### Script mode
+
+Execute as a Python script:
+
+```bash
+python notebook.py
+```
+
+- Runs top to bottom in dependency order
+- No browser required
+- Can accept command-line arguments
+- Outputs to terminal
+
+Use for:
+- Automation
+- Batch processing
+- CI/CD pipelines
+- Scheduled jobs
+
+Access CLI arguments:
+
+```python
+import marimo as mo
+
+args = mo.cli_args()
+print(f"Arguments: {args}")
+```
+
+## State management
+
+marimo provides `mo.state()` for managing mutable state:
+
+```python
+import marimo as mo
+
+# Create state with initial value
+get_count, set_count = mo.state(0)
+```
+
+```python
+# Read state
+current = get_count()
+
+# Update state
+button = mo.ui.button(
+    label=f"Clicked {current} times",
+    on_click=lambda _: set_count(current + 1)
+)
+button
+```
+
+State updates trigger reactivity just like variable changes.
+
+<Warning>
+  Use state sparingly. Prefer direct variable definitions when possible for clearer dataflow.
+</Warning>
+
+## Package management
+
+marimo automatically manages dependencies:
+
+### Auto-install on import
+
+When you import a package that's not installed:
+
+```python
+import pandas as pd  # marimo prompts to install pandas
+```
+
+marimo detects the missing package and offers to install it.
+
+### Inline dependencies
+
+Define requirements in the notebook:
+
+```python
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "pandas>=2.0",
+#     "matplotlib>=3.8",
+#     "numpy>=1.26"
+# ]
+# ///
+```
+
+marimo can create isolated environments based on these requirements.
+
+### Sandbox mode
+
+Run notebooks in isolated environments:
+
+```bash
+marimo edit --sandbox project/
+```
+
+Each notebook gets its own virtual environment with dependencies auto-installed.
+
+## Dynamic outputs
+
+### Markdown with variables
+
+Create markdown that updates with your data:
+
+```python
+import marimo as mo
+
+name = "Alice"
+score = 95
+
+mo.md(f"""
+# Results for {name}
+
+Score: **{score}%**
+
+{"⭐" * (score // 20)}
+""")
+```
+
+### Conditional rendering
+
+Show different outputs based on conditions:
+
+```python
+import marimo as mo
+
+if score >= 90:
+    mo.md("🎉 Excellent work!").callout(kind="success")
+elif score >= 70:
+    mo.md("👍 Good job!").callout(kind="info")
+else:
+    mo.md("📚 Keep practicing!").callout(kind="warn")
+```
+
+### Layouts
+
+Organize outputs with flexible layouts:
+
+```python
+import marimo as mo
+
+# Horizontal layout
+mo.hstack([chart1, chart2, chart3], justify="space-between")
+
+# Vertical layout
+mo.vstack([header, content, footer], align="center")
+
+# Tabs
+mo.ui.tabs({
+    "Overview": summary_table,
+    "Details": detailed_view,
+    "Charts": visualizations
+})
+
+# Accordion
+mo.accordion({
+    "Section 1": content1,
+    "Section 2": content2,
+    "Section 3": content3
+})
+```
+
+## Working with data
+
+### SQL cells
+
+Query dataframes and databases directly:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [25, 30, 35],
+    "score": [95, 87, 92]
+})
+```
+
+```sql
+SELECT name, score
+FROM df
+WHERE score > 90
+ORDER BY score DESC
+```
+
+The result is automatically available as a Python dataframe.
+
+### Interactive dataframes
+
+Explore dataframes with built-in interactivity:
+
+```python
+import marimo as mo
+
+# Display with search, filter, and sort
+mo.ui.table(df)
+
+# Or use the dataframe viewer
+mo.ui.dataframe(df)
+```
+
+Users can page through millions of rows with no code required.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Guides" icon="book-open" href="/guides">
+    Dive deeper into specific features and workflows
+  </Card>
+  
+  <Card title="API reference" icon="code" href="/api">
+    Explore the complete marimo API documentation
+  </Card>
+</CardGroup>

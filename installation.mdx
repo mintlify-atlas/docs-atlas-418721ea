@@ -1,0 +1,308 @@
+---
+title: Installation
+description: Install marimo with pip, conda, or uv and configure optional dependencies
+---
+
+# Installation
+
+marimo works on Linux, macOS, and Windows, requiring Python 3.10 or higher. Choose your preferred installation method below.
+
+## Basic installation
+
+<CodeGroup>
+```bash pip
+pip install marimo
+```
+
+```bash conda
+conda install -c conda-forge marimo
+```
+
+```bash uv
+uv pip install marimo
+```
+</CodeGroup>
+
+After installation, verify it works:
+
+```bash
+marimo tutorial intro
+```
+
+This opens an interactive tutorial in your browser.
+
+## Recommended installation
+
+For the full marimo experience with SQL, AI features, and formatting:
+
+```bash
+pip install "marimo[recommended]"
+```
+
+This includes:
+
+- **SQL support** - DuckDB, Polars, SQLGlot for SQL cells
+- **Sandbox environments** - Per-notebook isolated kernels with pyzmq and uv
+- **AI completion** - OpenAI integration for code generation
+- **Code formatting** - Ruff for auto-formatting
+- **Jupyter export** - nbformat for converting to/from Jupyter notebooks
+- **Visualization** - Altair for the data source viewer
+
+## Optional dependencies
+
+marimo has several optional dependency groups you can install individually:
+
+### SQL support
+
+Enable SQL cells with native database and dataframe querying:
+
+```bash
+pip install "marimo[sql]"
+```
+
+Includes:
+- `duckdb>=1.0.0` - Fast SQL query engine
+- `polars[pyarrow]>=1.9.0` - High-performance dataframes
+- `sqlglot[c]>=26.2.0` - SQL parsing and transpilation
+
+### Sandbox environments
+
+Run notebooks in isolated environments:
+
+```bash
+pip install "marimo[sandbox]"
+```
+
+Includes:
+- `pyzmq>=27.1.0` - IPC communication for sandbox kernels
+- `uv>=0.9.21` - Fast Python package installer for sandbox management
+
+Use sandboxes with:
+
+```bash
+marimo edit --sandbox notebook_directory/
+```
+
+### Language Server Protocol
+
+Advanced editor features like go-to-definition and refactoring:
+
+```bash
+pip install "marimo[lsp]"
+```
+
+Includes:
+- `python-lsp-server>=1.13.0` - LSP implementation
+- `python-lsp-ruff>=2.0.0` - Ruff integration for LSP
+
+### Model Context Protocol
+
+Integrate with MCP servers for AI context:
+
+```bash
+pip install "marimo[mcp]"
+```
+
+Includes:
+- `mcp>=1.0.0` - Model Context Protocol client
+- `pydantic>2` - Data validation
+
+## System requirements
+
+### Python version
+
+marimo requires Python 3.10 or higher. Check your version:
+
+```bash
+python --version
+```
+
+Supported versions:
+- Python 3.10
+- Python 3.11
+- Python 3.12
+- Python 3.13
+- Python 3.14
+
+### Operating systems
+
+marimo runs on:
+
+- **Linux** - All major distributions
+- **macOS** - Intel and Apple Silicon
+- **Windows** - Windows 10 and later
+
+<Note>
+  Some optional dependencies like `chdb` are not available on Windows.
+</Note>
+
+### Browser requirements
+
+marimo's editor runs in your web browser. Supported browsers:
+
+- Chrome / Chromium (recommended)
+- Firefox
+- Safari
+- Edge
+
+## Editor integrations
+
+### VS Code extension
+
+Edit marimo notebooks directly in VS Code:
+
+1. Install the [marimo extension](https://marketplace.visualstudio.com/items?itemName=marimo-team.vscode-marimo) from the VS Code marketplace
+2. Open any `.py` file containing a marimo notebook
+3. Use the marimo view to edit interactively
+
+### Other editors
+
+Edit marimo notebooks in any text editor:
+
+```bash
+# Edit the .py file in your favorite editor
+vim notebook.py
+code notebook.py
+zed notebook.py
+
+# Watch for changes and auto-reload
+marimo edit notebook.py --watch
+```
+
+The `--watch` flag automatically reloads the notebook when you save changes in your external editor.
+
+## Development installation
+
+To contribute to marimo or run the latest development version:
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/marimo-team/marimo.git
+    cd marimo
+    ```
+  </Step>
+  
+  <Step title="Install pixi">
+    marimo uses [pixi](https://pixi.sh) for development:
+    
+    ```bash
+    curl -fsSL https://pixi.sh/install.sh | bash
+    ```
+  </Step>
+  
+  <Step title="Set up the environment">
+    ```bash
+    pixi shell
+    ```
+  </Step>
+  
+  <Step title="Build frontend and backend">
+    ```bash
+    make fe && make py
+    ```
+  </Step>
+  
+  <Step title="Run in development mode">
+    ```bash
+    make dev
+    ```
+  </Step>
+</Steps>
+
+See [CONTRIBUTING.md](https://github.com/marimo-team/marimo/blob/main/CONTRIBUTING.md) for detailed development setup.
+
+## Verifying installation
+
+Check that marimo is installed correctly:
+
+```bash
+# Check version
+marimo --version
+
+# List available commands
+marimo --help
+
+# Run a tutorial
+marimo tutorial intro
+```
+
+## Upgrading marimo
+
+Keep marimo up to date:
+
+<CodeGroup>
+```bash pip
+pip install --upgrade marimo
+```
+
+```bash conda
+conda update -c conda-forge marimo
+```
+
+```bash uv
+uv pip install --upgrade marimo
+```
+</CodeGroup>
+
+## Uninstalling
+
+Remove marimo from your system:
+
+<CodeGroup>
+```bash pip
+pip uninstall marimo
+```
+
+```bash conda
+conda remove marimo
+```
+</CodeGroup>
+
+## Troubleshooting
+
+### Port already in use
+
+If port 2718 is already in use:
+
+```bash
+marimo edit --port 3000
+```
+
+### Import errors
+
+If you see import errors for optional dependencies:
+
+```bash
+# Install the specific dependency group you need
+pip install "marimo[sql]"
+pip install "marimo[recommended]"
+```
+
+### Browser doesn't open
+
+marimo should automatically open in your browser. If it doesn't:
+
+1. Look for the URL in the terminal output (usually `http://localhost:2718`)
+2. Open it manually in your browser
+3. Or disable auto-open: `marimo edit --no-browser`
+
+### Permission errors
+
+On some systems you may need to install in user mode:
+
+```bash
+pip install --user marimo
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="play" href="/quickstart">
+    Create your first marimo notebook
+  </Card>
+  
+  <Card title="Key concepts" icon="book" href="/key-concepts">
+    Learn how marimo notebooks work
+  </Card>
+</CardGroup>

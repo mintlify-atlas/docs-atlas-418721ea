@@ -1,0 +1,336 @@
+---
+title: AI Code Generation
+description: Generate marimo notebooks from text prompts and leverage AI-powered features for faster development.
+---
+
+# AI Code Generation
+
+marimo includes AI-powered features to help you create notebooks faster and more efficiently. Generate entire notebooks from natural language prompts or use AI assistance within your existing notebooks.
+
+<Note>
+  AI features in marimo use state-of-the-art language models to understand your intent and generate working Python code.
+</Note>
+
+## Text-to-Notebook
+
+The **Text-to-Notebook** feature allows you to generate complete marimo notebooks from simple text descriptions.
+
+### How It Works
+
+<Steps>
+  <Step title="Describe what you want">
+    Write a natural language description of the notebook you want to create.
+  </Step>
+  
+  <Step title="AI generates the code">
+    marimo's AI processes your prompt and generates a complete notebook with cells, code, and visualizations.
+  </Step>
+  
+  <Step title="Run and iterate">
+    Open the generated notebook, run it, and make any adjustments you need.
+  </Step>
+</Steps>
+
+### Using Text-to-Notebook
+
+You can generate notebooks from the command line:
+
+```bash
+marimo new --ai "Create a notebook that loads a CSV file and plots a histogram"
+```
+
+Or use it programmatically:
+
+```python
+from marimo._ai.text_to_notebook import text_to_notebook
+
+prompt = "Create a notebook that analyzes sales data"
+notebook_code = text_to_notebook(prompt)
+
+# Save to file
+with open("sales_analysis.py", "w") as f:
+    f.write(notebook_code)
+```
+
+### Example Prompts
+
+Here are some example prompts that work well:
+
+<CodeGroup>
+```text Data Analysis
+Create a notebook that:
+1. Loads a CSV file with sales data
+2. Calculates monthly revenue
+3. Creates a line chart showing revenue over time
+4. Displays summary statistics
+```
+
+```text Machine Learning
+Create a notebook that:
+1. Loads the iris dataset
+2. Splits into train/test sets
+3. Trains a classifier
+4. Shows confusion matrix and accuracy
+```
+
+```text Data Visualization
+Create a notebook with:
+1. Interactive sliders for parameters
+2. A scatter plot that updates based on slider values
+3. Summary statistics in a markdown cell
+```
+
+```text API Integration
+Create a notebook that:
+1. Fetches data from a REST API
+2. Parses JSON response
+3. Converts to dataframe
+4. Visualizes key metrics
+```
+</CodeGroup>
+
+## How AI Generation Works
+
+When you use the text-to-notebook feature:
+
+1. **Your prompt is sent to marimo's AI API** at `https://ai.marimo.app/`
+2. **The API uses OpenAI/Anthropic models** to convert your prompt into a notebook
+3. **Your prompt is securely stored** for caching purposes (fast response times)
+4. **No personal data** beyond the prompt itself is collected
+
+<Warning>
+  Before using the AI feature for the first time, you'll be asked to accept the terms of service. You can revoke consent at any time by modifying `~/.marimo/state.toml`.
+</Warning>
+
+### Terms of Service
+
+When you first use the text-to-notebook feature, you'll see:
+
+```
+Before using marimo's Text-To-Notebook AI feature, you should know:
+
+1. Your prompt will be sent to marimo's API at `https://ai.marimo.app/`
+2. The API uses OpenAI/Anthropic's models to convert your prompt into a notebook
+3. Your prompt is securely stored for caching purposes (fast response times)
+4. No personal data beyond the prompt itself is collected
+5. You can revoke consent at any time by modifying ~/.marimo/state.toml
+
+Do you accept these terms? (y/n)
+```
+
+## AI Chat Integration
+
+marimo also supports AI chat interfaces through the `mo.ui.chat()` component.
+
+### Creating a Chat Interface
+
+```python
+import marimo as mo
+
+chat = mo.ui.chat(
+    mo.ai.ChatModelConfig(
+        model="gpt-4",
+        system_message="You are a helpful data science assistant."
+    )
+)
+chat
+```
+
+### Chat Configuration
+
+Configure the chat model with various options:
+
+```python
+from marimo import ai
+
+config = ai.ChatModelConfig(
+    model="gpt-4",  # or "claude-3-5-sonnet", etc.
+    system_message="You are an expert Python programmer.",
+    temperature=0.7,
+    max_tokens=1000
+)
+
+chat = mo.ui.chat(config)
+```
+
+### Chat Messages
+
+Work with chat messages programmatically:
+
+```python
+from marimo import ai
+
+# Create a chat message
+message = ai.ChatMessage(
+    role="user",
+    content="Explain how list comprehensions work"
+)
+
+# With attachments
+message_with_file = ai.ChatMessage(
+    role="user",
+    content="Analyze this data",
+    attachments=[ai.ChatAttachment(path="data.csv")]
+)
+```
+
+## Configuring AI Providers
+
+marimo supports multiple AI providers. Configure them through environment variables or notebook settings.
+
+### OpenAI
+
+```bash
+export OPENAI_API_KEY="your-api-key"
+```
+
+```python
+config = mo.ai.ChatModelConfig(
+    model="gpt-4",
+    api_key="your-api-key"  # or use environment variable
+)
+```
+
+### Anthropic
+
+```bash
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+```python
+config = mo.ai.ChatModelConfig(
+    model="claude-3-5-sonnet-20241022",
+    api_key="your-api-key"
+)
+```
+
+### Other Providers
+
+marimo uses PydanticAI under the hood, which supports:
+
+- OpenAI
+- Anthropic
+- Google Gemini
+- Groq
+- Mistral
+- Custom providers
+
+<Accordion title="Using custom providers">
+  You can configure custom AI providers by implementing the appropriate interface. See the PydanticAI documentation for details.
+</Accordion>
+
+## Zero-Shot Notebook Generation
+
+The text-to-notebook feature uses **zero-shot generation**, meaning:
+
+- No examples needed - just describe what you want
+- Works with various domains: data analysis, ML, visualization, web apps
+- Generates complete, runnable notebooks
+- Includes imports, data loading, analysis, and visualization
+
+### What Gets Generated
+
+A typical generated notebook includes:
+
+<Steps>
+  <Step title="Imports">
+    All necessary Python libraries (pandas, numpy, matplotlib, etc.)
+  </Step>
+  
+  <Step title="Data Loading">
+    Code to load or generate sample data
+  </Step>
+  
+  <Step title="Analysis">
+    Data processing and analysis logic
+  </Step>
+  
+  <Step title="Visualization">
+    Charts, plots, and interactive elements
+  </Step>
+  
+  <Step title="UI Elements">
+    Interactive widgets like sliders, dropdowns, etc. when appropriate
+  </Step>
+</Steps>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Be Specific" icon="bullseye">
+    Provide clear, detailed descriptions of what you want the notebook to do.
+  </Card>
+  <Card title="Include Context" icon="book">
+    Mention data sources, expected outputs, and any specific libraries to use.
+  </Card>
+  <Card title="Iterate" icon="rotate">
+    Generated notebooks are starting points - review and refine the code.
+  </Card>
+  <Card title="Test Thoroughly" icon="flask">
+    Always test generated code with your actual data before using in production.
+  </Card>
+</CardGroup>
+
+### Writing Good Prompts
+
+<Accordion title="Good prompt structure">
+  A good prompt includes:
+  
+  1. **Clear objective**: What should the notebook accomplish?
+  2. **Data description**: What kind of data will be used?
+  3. **Expected outputs**: What visualizations or results do you want?
+  4. **Specific requirements**: Any libraries, methods, or constraints?
+  
+  Example:
+  ```
+  Create a notebook that:
+  - Loads a CSV file with columns: date, product, sales, region
+  - Filters data for the last 12 months
+  - Groups by month and region
+  - Creates an interactive line chart showing sales trends
+  - Uses plotly for visualization
+  - Includes a dropdown to select specific regions
+  ```
+</Accordion>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Generation fails or times out">
+    - Check your internet connection
+    - Try a simpler prompt first
+    - Make sure you've accepted the terms of service
+    - Verify that the marimo AI API is accessible
+  </Accordion>
+  
+  <Accordion title="Generated code doesn't work">
+    - Review the generated code for obvious errors
+    - Make sure required libraries are installed
+    - Try regenerating with a more specific prompt
+    - Manually adjust the code as needed
+  </Accordion>
+  
+  <Accordion title="Want to revoke AI access">
+    Edit `~/.marimo/state.toml` and remove or modify the `accepted_text_to_notebook_terms_at` field.
+  </Accordion>
+</AccordionGroup>
+
+## Privacy and Security
+
+<Warning>
+  **Important**: Your prompts are sent to external AI APIs. Don't include sensitive information, credentials, or proprietary data in your prompts.
+</Warning>
+
+What marimo collects:
+- Your text prompts
+- Generated notebook code (for caching)
+
+What marimo does NOT collect:
+- Personal identifying information
+- Your notebook data
+- API keys or credentials
+- File contents from your system
+
+<Tip>
+  The AI feature is designed for rapid prototyping and learning. Always review and test generated code before using it with real data.
+</Tip>

@@ -1,0 +1,541 @@
+---
+title: Testing marimo Notebooks
+description: Write and run tests for marimo notebooks using pytest with reactive test execution
+---
+
+# Testing marimo Notebooks
+
+marimo notebooks are pure Python, making them fully testable with standard Python testing frameworks. marimo provides first-class pytest integration with reactive test execution.
+
+## Quick Start
+
+Create a notebook with test functions:
+
+```python
+import marimo as mo
+
+app = mo.App()
+
+@app.cell
+def test_addition():
+    assert 1 + 1 == 2
+    return
+
+@app.cell  
+def test_string_operations():
+    assert "hello".upper() == "HELLO"
+    return
+
+if __name__ == "__main__":
+    app.run()
+```
+
+Run tests interactively in the editor or via CLI:
+
+```bash
+marimo edit test_notebook.py
+# Tests run automatically and display results
+
+# Or run via pytest
+pytest test_notebook.py
+```
+
+## Reactive Test Execution
+
+marimo can automatically run pytest on cells containing test functions:
+
+```python
+app = mo.App(
+    runtime={
+        "reactive_tests": True  # Enable automatic test execution
+    }
+)
+```
+
+When enabled:
+- Cells with only test functions/classes are automatically tested
+- Test results appear inline in the notebook
+- Tests re-run when dependencies change
+
+## Writing Tests
+
+### Basic Test Functions
+
+```python
+import marimo as mo
+
+app = mo.App()
+
+@app.cell
+def test_calculation():
+    """Test a simple calculation."""
+    result = 2 + 2
+    assert result == 4
+    return
+
+@app.cell
+def test_with_fixture():
+    """Tests can use pytest fixtures."""
+    import pytest
+    
+    @pytest.fixture
+    def sample_data():
+        return [1, 2, 3, 4, 5]
+    
+    def test_sum(sample_data):
+        assert sum(sample_data) == 15
+    
+    return
+```
+
+### Testing Functions Defined in Notebooks
+
+Use `@app.function` to define testable functions:
+
+```python
+@app.function
+def inc(x):
+    """Increment a number."""
+    return x + 1
+
+@app.cell
+def test_inc():
+    assert inc(3) == 4
+    return
+
+@app.cell
+def test_inc_negative():
+    assert inc(-1) == 0
+    return
+```
+
+### Parametrized Tests
+
+```python
+import pytest
+import marimo as mo
+
+app = mo.App()
+
+@app.function
+def multiply(a, b):
+    return a * b
+
+@app.cell
+def test_multiply():
+    @pytest.mark.parametrize("a,b,expected", [
+        (2, 3, 6),
+        (5, 4, 20),
+        (0, 10, 0),
+        (-2, 3, -6),
+    ])
+    def test_multiply_cases(a, b, expected):
+        assert multiply(a, b) == expected
+    return
+```
+
+### Test Classes
+
+```python
+import marimo as mo
+
+app = mo.App()
+
+@app.cell
+def test_calculator():
+    class TestCalculator:
+        def test_add(self):
+            assert 1 + 1 == 2
+        
+        def test_subtract(self):
+            assert 5 - 3 == 2
+        
+        def test_multiply(self):
+            assert 3 * 4 == 12
+    return
+```
+
+## Running Tests
+
+### In the marimo Editor
+
+With `reactive_tests: True`, test cells automatically execute and display results:
+
+```
+=========== Overview ===========
+Passed Tests:
+✓ test_notebook.py::test_addition
+✓ test_notebook.py::test_string_operations
+
+Summary:
+Total: 2, Passed: 2, Failed: 0, Errors: 0, Skipped: 0
+```
+
+### Using pytest CLI
+
+Run tests using pytest directly:
+
+```bash
+# Run all tests in a notebook
+pytest test_notebook.py
+
+# Run with verbose output
+pytest -v test_notebook.py
+
+# Run specific test
+pytest test_notebook.py::test_addition
+
+# Run with coverage
+pytest --cov=. test_notebook.py
+```
+
+### Programmatic Test Execution
+
+From `marimo/_runtime/pytest.py`, you can run tests programmatically:
+
+```python
+from marimo._runtime.pytest import run_pytest
+
+# Run tests in a notebook
+result = run_pytest(
+    defs=set(globals().keys()),
+    lcls=globals(),
+    notebook_path="test_notebook.py"
+)
+
+print(result.summary)
+# Total: 5, Passed: 4, Failed: 1, Errors: 0, Skipped: 0
+
+print(result.output)  # Full pytest output
+```
+
+## Test Fixtures
+
+### Cell-Level Fixtures
+
+Define fixtures in the same cell as tests:
+
+```python
+import pytest
+import marimo as mo
+
+@app.cell
+def test_with_data():
+    @pytest.fixture
+    def sample_dataframe():
+        import pandas as pd
+        return pd.DataFrame({
+            'a': [1, 2, 3],
+            'b': [4, 5, 6]
+        })
+    
+    def test_dataframe_shape(sample_dataframe):
+        assert sample_dataframe.shape == (3, 2)
+    
+    def test_dataframe_columns(sample_dataframe):
+        assert list(sample_dataframe.columns) == ['a', 'b']
+    
+    return
+```
+
+### Shared Fixtures
+
+Define fixtures in a separate cell for reuse:
+
+```python
+@app.cell
+def fixtures():
+    import pytest
+    
+    @pytest.fixture
+    def database_connection():
+        # Setup
+        conn = create_connection()
+        yield conn
+        # Teardown
+        conn.close()
+    
+    return database_connection,
+
+@app.cell
+def test_database(database_connection):
+    result = database_connection.query("SELECT 1")
+    assert result == 1
+    return
+```
+
+## Integration Testing
+
+### Testing Data Pipelines
+
+```python
+import marimo as mo
+import pandas as pd
+
+app = mo.App()
+
+@app.function
+def load_data(filepath):
+    return pd.read_csv(filepath)
+
+@app.function  
+def transform_data(df):
+    return df.dropna().reset_index(drop=True)
+
+@app.function
+def calculate_metrics(df):
+    return {
+        'mean': df['value'].mean(),
+        'std': df['value'].std()
+    }
+
+@app.cell
+def test_pipeline():
+    # Create test data
+    test_df = pd.DataFrame({
+        'value': [1, 2, None, 4, 5]
+    })
+    test_df.to_csv('/tmp/test_data.csv', index=False)
+    
+    # Test pipeline
+    raw = load_data('/tmp/test_data.csv')
+    assert len(raw) == 5
+    
+    cleaned = transform_data(raw)
+    assert len(cleaned) == 4  # NaN removed
+    
+    metrics = calculate_metrics(cleaned)
+    assert metrics['mean'] == 3.0
+    
+    return
+```
+
+### Testing UI Components
+
+```python
+import marimo as mo
+
+app = mo.App()
+
+@app.cell
+def test_ui_elements():
+    # Test slider creation
+    slider = mo.ui.slider(0, 100, value=50)
+    assert slider.value == 50
+    
+    # Test text input
+    text = mo.ui.text(value="hello")
+    assert text.value == "hello"
+    
+    # Test dropdown
+    dropdown = mo.ui.dropdown(
+        options=['a', 'b', 'c'],
+        value='b'
+    )
+    assert dropdown.value == 'b'
+    
+    return
+```
+
+## Testing Best Practices
+
+<Accordion title="Isolate test cells">
+  Keep test cells independent and focused:
+  
+  ```python
+  # ✓ Good: One test per cell or related tests together
+  @app.cell
+  def test_addition():
+      assert add(2, 3) == 5
+      return
+  
+  # ❌ Avoid: Mixing tests with application logic
+  @app.cell
+  def compute_and_test():
+      result = expensive_computation()
+      assert result > 0  # Test mixed with computation
+      return result
+  ```
+</Accordion>
+
+<Accordion title="Use descriptive test names">
+  Follow pytest conventions for test naming:
+  
+  ```python
+  def test_user_authentication_with_valid_credentials():
+      # Clear what's being tested
+      pass
+  
+  def test_data_loading_handles_missing_file():
+      # Clear error condition being tested  
+      pass
+  ```
+</Accordion>
+
+<Accordion title="Test edge cases">
+  Cover boundary conditions and error cases:
+  
+  ```python
+  import pytest
+  
+  def test_division_by_zero():
+      with pytest.raises(ZeroDivisionError):
+          result = 1 / 0
+  
+  def test_empty_list_input():
+      assert process_list([]) == []
+  
+  def test_negative_input_validation():
+      with pytest.raises(ValueError):
+          validate_positive(-1)
+  ```
+</Accordion>
+
+<Accordion title="Use fixtures for setup/teardown">
+  Avoid duplication with pytest fixtures:
+  
+  ```python
+  @pytest.fixture
+  def temp_database():
+      # Setup
+      db = create_test_database()
+      populate_test_data(db)
+      yield db
+      # Teardown
+      db.drop_all_tables()
+      db.close()
+  ```
+</Accordion>
+
+## Running Doctests
+
+marimo supports running doctests in notebook cells:
+
+```python
+import marimo as mo
+
+app = mo.App()
+
+@app.function
+def add(a, b):
+    """
+    Add two numbers.
+    
+    >>> add(2, 3)
+    5
+    >>> add(-1, 1)
+    0
+    >>> add(0, 0)
+    0
+    """
+    return a + b
+
+@app.cell
+def run_doctests():
+    import doctest
+    results = doctest.testmod()
+    return mo.md(f"Tests: {results.attempted}, Failures: {results.failed}")
+```
+
+## Test Configuration
+
+Configure pytest behavior in `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests", "notebooks"]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = """
+    -v
+    --strict-markers
+    --disable-warnings
+    --color=yes
+"""
+```
+
+## CI/CD Integration
+
+Run notebook tests in continuous integration:
+
+```yaml
+# .github/workflows/test.yml
+name: Test Notebooks
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install marimo pytest
+          pip install -r requirements.txt
+      
+      - name: Run tests
+        run: |
+          pytest notebooks/
+```
+
+## Example: Complete Test Suite
+
+From `examples/testing/test_with_pytest.py`:
+
+```python
+import marimo as mo
+
+app = mo.App()
+
+@app.function
+def inc(x):
+    """Increment a number by 1."""
+    return x + 1
+
+@app.cell
+def test_answer():
+    # This test intentionally fails to demonstrate failure reporting
+    assert inc(3) == 5, "This test fails"
+    return
+
+@app.cell
+def test_sanity():
+    # This test passes
+    assert inc(3) == 4, "This test passes"
+    return
+
+if __name__ == "__main__":
+    app.run()
+```
+
+## Debugging Failed Tests
+
+When tests fail, marimo provides detailed tracebacks:
+
+```python
+import marimo as mo
+import pytest
+
+@app.cell
+def test_with_debug():
+    # Use pytest.set_trace() for interactive debugging
+    value = compute_something()
+    
+    # Add informative assertion messages
+    assert value > 0, f"Expected positive value, got {value}"
+    
+    # Use pytest.approx for floating point
+    assert value == pytest.approx(3.14, rel=1e-2)
+    return
+```
+
+## Related Resources
+
+- [pytest Documentation](https://docs.pytest.org/) - Complete pytest reference
+- [marimo Reactivity](https://docs.marimo.io/guides/reactivity) - Understanding reactive execution
+- [marimo Functions](https://docs.marimo.io/guides/reusing_functions/) - Defining reusable functions

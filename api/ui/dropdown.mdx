@@ -1,0 +1,89 @@
+---
+title: 'Dropdown'
+description: 'Dropdown menu for selecting options'
+---
+
+# mo.ui.dropdown
+
+Create a dropdown menu for selecting from a list of options.
+
+## Signature
+
+```python
+mo.ui.dropdown(
+    options: Sequence[str] | dict[str, Any],
+    value: str | None = None,
+    allow_select_none: bool | None = None,
+    searchable: bool = False,
+    *,
+    label: str = "",
+    on_change: Callable[[Any], None] | None = None,
+    full_width: bool = False
+)
+```
+
+## Parameters
+
+<ParamField path="options" type="Sequence[str] | dict[str, Any]" required>
+  List of options or dictionary mapping labels to values
+</ParamField>
+
+<ParamField path="value" type="str">
+  Initially selected value
+</ParamField>
+
+<ParamField path="allow_select_none" type="bool">
+  Allow deselecting to have no selection (defaults to True if value is None)
+</ParamField>
+
+<ParamField path="searchable" type="bool" default="False">
+  Enable search filtering of options
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the dropdown
+</ParamField>
+
+<ParamField path="full_width" type="bool" default="False">
+  Whether dropdown takes full width
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+
+# Simple dropdown
+dropdown = mo.ui.dropdown(
+    options=["Apple", "Banana", "Cherry"],
+    value="Apple"
+)
+dropdown
+```
+
+```python
+# Dropdown with value mapping
+dropdown = mo.ui.dropdown(
+    options={
+        "Small": "sm",
+        "Medium": "md",
+        "Large": "lg"
+    },
+    label="**Select size:**"
+)
+
+mo.md(f"Selected: {dropdown.value}")  # Returns "sm", "md", or "lg"
+```
+
+```python
+# Searchable dropdown
+countries = mo.ui.dropdown(
+    options=["USA", "UK", "Canada", "Australia", "Germany"],
+    searchable=True,
+    label="Country"
+)
+```
+
+<Tip>
+For multiple selections, use `mo.ui.multiselect()` instead.
+</Tip>

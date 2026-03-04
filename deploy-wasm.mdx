@@ -1,0 +1,530 @@
+---
+title: "Deploy with WebAssembly"
+description: "Run marimo notebooks entirely in the browser using WebAssembly. No backend required."
+---
+
+# Deploy with WebAssembly
+
+Deploy marimo notebooks that run entirely in the browser using WebAssembly (WASM). No Python backend required—notebooks execute directly in the user's browser via Pyodide, a port of CPython to WebAssembly.
+
+## Why WASM Deployment?
+
+WASM notebooks offer unique advantages:
+
+<CardGroup cols={2}>
+  <Card title="Zero Infrastructure" icon="server">
+    No backend servers to maintain, configure, or pay for. Host static files anywhere.
+  </Card>
+  <Card title="Instant Access" icon="bolt">
+    Users don't need Python installed. Works on any device with a modern browser.
+  </Card>
+  <Card title="Low Latency" icon="gauge">
+    No network requests to remote servers. All computation happens locally.
+  </Card>
+  <Card title="Easy Sharing" icon="share-nodes">
+    Share via link, embed in documentation, or publish to GitHub Pages.
+  </Card>
+</CardGroup>
+
+<Note>
+WASM notebooks are ideal for: interactive documentation, educational materials, blog posts, lightweight data exploration, quick prototyping, and shareable tools. For heavy computation or large datasets, use a traditional backend.
+</Note>
+
+## Deployment Methods
+
+marimo offers three ways to deploy WASM notebooks:
+
+### 1. Export to WASM HTML
+
+Generate a standalone HTML file with embedded WebAssembly:
+
+```bash
+marimo export html-wasm notebook.py -o notebook.html
+```
+
+The generated file:
+- ✅ Runs completely offline
+- ✅ Contains your entire notebook
+- ✅ Includes all marimo dependencies
+- ✅ Can be hosted anywhere (GitHub Pages, S3, Netlify, etc.)
+
+<Steps>
+  <Step title="Export notebook">
+    ```bash
+    marimo export html-wasm my_app.py -o index.html
+    ```
+  </Step>
+  
+  <Step title="Host the HTML file">
+    Upload to any static hosting service:
+    ```bash
+    # GitHub Pages
+    git add index.html
+    git commit -m "Add WASM app"
+    git push
+    
+    # Or use the gh-pages branch
+    npx gh-pages -d . -f index.html
+    ```
+  </Step>
+  
+  <Step title="Share the URL">
+    Your notebook is now live and executable in any browser!
+  </Step>
+</Steps>
+
+### 2. Online Playground
+
+Use [marimo.new](https://marimo.new) for instant WASM notebooks:
+
+- **No installation required**: Create and run notebooks in your browser
+- **Share via link**: Get a shareable URL instantly
+- **No login needed**: Start coding immediately
+- **Great for demos**: Embed in documentation or presentations
+
+Simply visit [https://marimo.new](https://marimo.new) and start coding!
+
+<Tip>
+**Load from GitHub**: In the playground, use File → Open from URL to load any notebook from a GitHub URL. Perfect for trying out examples!
+</Tip>
+
+### 3. Community Cloud
+
+Deploy to [marimo.io](https://marimo.io) for managed WASM hosting:
+
+- **Workspace management**: Organize notebooks in collections
+- **Public or private**: Control access with email-based authorization
+- **Nice URLs**: Get shareable links like `https://marimo.app/@username/notebook`
+- **Free tier**: Host notebooks at no cost
+
+Sign up at [marimo.io/sign-up](https://marimo.io/sign-up) to get started.
+
+## Working with Packages
+
+### Pre-installed Packages
+
+WASM notebooks come with many packages pre-installed:
+
+- **Scientific**: NumPy, SciPy, scikit-learn, pandas
+- **Visualization**: matplotlib, altair, plotly
+- **Data**: polars, DuckDB, pyarrow
+- **ML**: scikit-learn, xgboost (selected packages)
+
+See [Pyodide's package list](https://pyodide.org/en/stable/usage/packages-in-pyodide.html) for the full catalog.
+
+### Installing Additional Packages
+
+Use `micropip` to install packages at runtime:
+
+<CodeGroup>
+```python Import micropip
+import micropip
+```
+
+```python Install packages
+await micropip.install("plotly")
+import plotly.express as px
+```
+
+```python Multiple packages
+await micropip.install(["requests", "beautifulsoup4"])
+```
+</CodeGroup>
+
+<Warning>
+**Package compatibility**: Only pure Python packages or packages with pre-built WebAssembly wheels work in WASM. Packages with native C extensions not compiled for Pyodide won't work.
+</Warning>
+
+### Auto-install on Import
+
+marimo automatically attempts to install missing packages:
+
+```python
+import marimo as mo
+
+# marimo will try to auto-install if not present
+import altair as alt
+import vega_datasets
+
+data = vega_datasets.data.cars()
+mo.ui.altair_chart(alt.Chart(data).mark_point())
+```
+
+<Tip>
+**Performance tip**: Put `import marimo as mo` in its own cell with no other code. This ensures marimo loads quickly and the UI renders immediately.
+</Tip>
+
+### Using Script Metadata
+
+Declare dependencies using PEP 723 inline metadata:
+
+```python
+# /// script
+# dependencies = [
+#   "altair",
+#   "pandas",
+#   "vega_datasets",
+# ]
+# ///
+
+import marimo as mo
+import altair as alt
+import pandas as pd
+```
+
+marimo reads this metadata and pre-installs dependencies when the WASM notebook loads.
+
+## Capabilities and Limitations
+
+### What Works
+
+✅ **Full marimo reactivity**: UI elements, reactive execution, dataflow
+✅ **Most Python**: Standard library, pure Python packages
+✅ **Data manipulation**: pandas, polars, NumPy, DuckDB
+✅ **Visualization**: matplotlib, altair, plotly, seaborn
+✅ **File operations**: Read/write using browser's virtual filesystem
+✅ **API requests**: Fetch data from APIs (with CORS support)
+✅ **Machine learning**: scikit-learn, lightweight models
+
+### Limitations
+
+❌ **Heavy computation**: Limited by browser performance
+❌ **Large datasets**: Browser memory constraints (~2GB typically)
+❌ **Native extensions**: C/C++ packages without WASM builds
+❌ **System calls**: No real filesystem, subprocess, etc.
+❌ **Long-running jobs**: Browser tabs can timeout
+❌ **Networking**: Subject to CORS restrictions
+
+<Note>
+For these use cases, deploy with a traditional Python backend using `marimo run` or programmatic deployment.
+</Note>
+
+## File Operations
+
+### Reading Files
+
+WASM notebooks use a virtual filesystem:
+
+```python
+import marimo as mo
+
+# Upload file via UI
+file_upload = mo.ui.file()
+file_upload
+```
+
+Access uploaded files:
+
+```python
+import pandas as pd
+import io
+
+if file_upload.value:
+    # file_upload.value is bytes
+    df = pd.read_csv(io.BytesIO(file_upload.value[0].contents))
+    mo.ui.table(df)
+```
+
+### Writing Files
+
+Write to virtual filesystem and download:
+
+```python
+import marimo as mo
+import pandas as pd
+
+# Create some data
+df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+# Write to virtual filesystem
+df.to_csv("/tmp/output.csv", index=False)
+
+# Create download button
+with open("/tmp/output.csv", "rb") as f:
+    data = f.read()
+
+mo.download(
+    data=data,
+    filename="output.csv",
+    label="Download CSV"
+)
+```
+
+## Embedding WASM Notebooks
+
+Embed interactive notebooks in any webpage:
+
+### iframe Embed
+
+```html
+<!-- Embed playground notebook -->
+<iframe 
+  src="https://marimo.app/l/c4hgb5?embed=true" 
+  width="100%" 
+  height="500" 
+  frameborder="0"
+></iframe>
+```
+
+### Self-hosted Embed
+
+Host your exported HTML and embed:
+
+```html
+<iframe 
+  src="https://your-site.com/notebook.html" 
+  width="100%" 
+  height="600"
+  frameborder="0"
+></iframe>
+```
+
+<Tip>
+Use `embed=true` query parameter on playground links to hide the header and provide a cleaner embed experience.
+</Tip>
+
+## GitHub Pages Deployment
+
+Automate deployment to GitHub Pages with GitHub Actions:
+
+### Manual Deployment
+
+```bash
+# Export notebook
+marimo export html-wasm app.py -o index.html
+
+# Deploy to gh-pages branch
+git add index.html
+git commit -m "Deploy WASM app"
+git push origin gh-pages
+```
+
+### Automated with Actions
+
+Create `.github/workflows/deploy-wasm.yml`:
+
+```yaml
+name: Deploy WASM Notebook
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install marimo
+        run: pip install marimo
+      
+      - name: Export to WASM
+        run: marimo export html-wasm app.py -o index.html
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+```
+
+See the [GitHub Pages guide](/guides/deploying/github_pages) for detailed instructions.
+
+## Advanced Configuration
+
+### Custom Loading Screen
+
+Customize the loading experience in exported HTML:
+
+```python
+# In your notebook
+import marimo as mo
+
+mo.app(
+    app_title="My WASM App",
+    layout_file="custom_layout.py"  # Custom UI layout
+)
+```
+
+### Performance Optimization
+
+<Steps>
+  <Step title="Minimize dependencies">
+    Only import what you need. Fewer packages = faster load time.
+  </Step>
+  
+  <Step title="Use lazy imports">
+    Import heavy packages only in cells that use them.
+  </Step>
+  
+  <Step title="Optimize data size">
+    Keep datasets small. Consider loading data from URLs instead of embedding.
+  </Step>
+  
+  <Step title="Cache computations">
+    Use `@functools.cache` for expensive operations.
+  </Step>
+</Steps>
+
+### Loading External Data
+
+Fetch data from APIs instead of embedding:
+
+```python
+import marimo as mo
+import pandas as pd
+
+# Load from URL (subject to CORS)
+url = "https://raw.githubusercontent.com/user/repo/main/data.csv"
+df = pd.read_csv(url)
+
+mo.ui.table(df)
+```
+
+<Warning>
+**CORS restrictions**: External data sources must have CORS headers that allow browser access. Many APIs don't support this. Consider hosting data on CORS-enabled services or using a proxy.
+</Warning>
+
+## Use Cases
+
+### Interactive Documentation
+
+```python
+import marimo as mo
+import numpy as np
+import matplotlib.pyplot as plt
+
+mo.md("""
+# Fourier Transform Demo
+
+Adjust the parameters to see how they affect the signal:
+""")
+
+frequency = mo.ui.slider(1, 10, value=5, label="Frequency")
+frequency
+```
+
+### Educational Materials
+
+Teach concepts with interactive examples:
+
+```python
+import marimo as mo
+
+mo.md("""# Linear Regression
+
+Drag the slider to change the slope:
+""")
+
+slope = mo.ui.slider(-5, 5, step=0.1, value=1, label="Slope")
+slope
+```
+
+### Data Exploration Tools
+
+Build shareable data apps:
+
+```python
+import marimo as mo
+import altair as alt
+
+column = mo.ui.dropdown(
+    options=df.columns.tolist(),
+    value=df.columns[0],
+    label="Select column"
+)
+
+chart = alt.Chart(df).mark_bar().encode(x=column.value, y='count()')
+mo.ui.altair_chart(chart)
+```
+
+## Security Considerations
+
+<Warning>
+**WASM notebooks run in the user's browser:**
+
+1. **Code visibility**: All code is visible to users (view source)
+2. **No secrets**: Don't embed API keys or passwords
+3. **Client-side only**: No access to server resources
+4. **Sandboxed**: Browser security model provides isolation
+5. **CORS applies**: Can only fetch from CORS-enabled sources
+</Warning>
+
+For applications requiring secrets or server-side logic, use traditional deployment with `marimo run`.
+
+## Troubleshooting
+
+### Package Not Found
+
+```python
+# Try manual installation
+import micropip
+await micropip.install("package-name")
+```
+
+### Slow Loading
+
+- Reduce number of dependencies
+- Use lighter-weight alternatives (e.g., polars instead of pandas)
+- Split into multiple smaller notebooks
+
+### Memory Issues
+
+- Reduce dataset size
+- Process data in chunks
+- Use more efficient data structures
+
+### CORS Errors
+
+When loading external data:
+- Use CORS-enabled APIs
+- Host data on CORS-friendly services (GitHub raw, jsDelivr)
+- Consider embedding small datasets directly
+
+## Examples
+
+Explore WASM notebooks:
+
+- [marimo Gallery](https://marimo.app/gallery) - Community-created notebooks
+- [marimo Playground](https://marimo.new) - Try creating your own
+- [Documentation Examples](https://docs.marimo.io) - Embedded interactive examples
+
+## Best Practices
+
+<Tip>
+**For successful WASM deployment:**
+
+1. **Keep it lightweight**: Fewer dependencies, smaller data
+2. **Test in browser first**: Use playground or local export
+3. **Provide loading feedback**: Users expect some initial load time
+4. **Handle errors gracefully**: Check for package availability
+5. **Document requirements**: Let users know what browser/features needed
+6. **Use progressive enhancement**: Start with core functionality
+7. **Optimize for mobile**: Many users browse on phones
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Export to WASM" icon="file-export" href="/guides/exporting">
+    Learn more about exporting options
+  </Card>
+  <Card title="Playground" icon="play" href="https://marimo.new">
+    Create WASM notebooks instantly
+  </Card>
+  <Card title="GitHub Pages" icon="github" href="/guides/deploying/github_pages">
+    Automate deployment to GitHub Pages
+  </Card>
+  <Card title="Community Cloud" icon="cloud" href="https://marimo.io">
+    Deploy to managed WASM hosting
+  </Card>
+</CardGroup>

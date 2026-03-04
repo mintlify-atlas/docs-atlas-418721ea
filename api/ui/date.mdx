@@ -1,0 +1,80 @@
+---
+title: 'Date'
+description: 'Date picker input'
+---
+
+# mo.ui.date
+
+Create a date picker for selecting dates.
+
+## Signature
+
+```python
+mo.ui.date(
+    start: date | str | None = None,
+    stop: date | str | None = None,
+    value: date | str | None = None,
+    *,
+    label: str = "",
+    on_change: Callable[[date], None] | None = None,
+    full_width: bool = False,
+    disabled: bool = False
+)
+```
+
+## Parameters
+
+<ParamField path="start" type="date | str">
+  Minimum selectable date
+</ParamField>
+
+<ParamField path="stop" type="date | str">
+  Maximum selectable date
+</ParamField>
+
+<ParamField path="value" type="date | str">
+  Initially selected date
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the date picker
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether the date picker is disabled
+</ParamField>
+
+<ParamField path="full_width" type="bool" default="False">
+  Whether date picker takes full width
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+from datetime import date, timedelta
+
+# Basic date picker
+selected_date = mo.ui.date(label="**Select a date:**")
+selected_date
+```
+
+```python
+# Date range
+today = date.today()
+date_picker = mo.ui.date(
+    start=today,
+    stop=today + timedelta(days=30),
+    value=today,
+    label="Appointment date"
+)
+```
+
+```python
+# Use the value
+mo.md(f"You selected: {selected_date.value}")
+```
+
+<Tip>
+For selecting date ranges, use `mo.ui.date_range()` instead.
+</Tip>

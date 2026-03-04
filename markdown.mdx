@@ -1,0 +1,539 @@
+---
+title: Markdown
+description: Create rich, dynamic markdown content in marimo with Python variable interpolation, LaTeX math, and interactive elements.
+---
+
+# Markdown
+
+marimo provides powerful markdown support through `mo.md()`, allowing you to create rich text content with embedded Python variables, LaTeX equations, and interactive UI elements.
+
+<Note>
+  Markdown in marimo is **dynamic** - you can interpolate Python variables and even embed interactive UI elements directly in your markdown.
+</Note>
+
+## Basic Markdown
+
+Create markdown content using `mo.md()`:
+
+```python
+import marimo as mo
+
+mo.md(
+    """
+    # Welcome to marimo
+    
+    This is a **markdown** cell with _formatting_.
+    
+    - Item 1
+    - Item 2
+    - Item 3
+    """
+)
+```
+
+The output is automatically rendered as formatted HTML.
+
+## Interpolating Python Variables
+
+One of the most powerful features of `mo.md()` is the ability to interpolate Python variables using f-strings:
+
+```python
+name = "Alice"
+age = 30
+
+mo.md(f"""
+# User Profile
+
+**Name:** {name}  
+**Age:** {age} years old
+""")
+```
+
+### Dynamic Content Example
+
+```python
+# Cell 1: Create a slider
+x = mo.ui.slider(1, 10)
+x
+```
+
+```python
+# Cell 2: Use the value in markdown
+mo.md(f"The current value is **{x.value}**")
+```
+
+When you move the slider, the markdown cell automatically updates!
+
+## Embedding UI Elements
+
+You can embed UI elements directly in markdown:
+
+```python
+slider = mo.ui.slider(1, 100)
+
+mo.md(f"""
+# Interactive Example
+
+Adjust the value: {slider}
+
+Current value: **{slider.value}**
+""")
+```
+
+The UI element appears inline with the markdown text.
+
+### Complex Example
+
+```python
+import math
+
+x = mo.ui.slider(1, 9, label="x")
+
+mo.md(f"""
+# Exponential Function
+
+Move the slider to see the value of $e^x$:
+
+{x}
+
+Result: $e^{x.value} = {math.exp(x.value):0.3f}$
+""")
+```
+
+## LaTeX Math
+
+marimo supports LaTeX math rendering for beautiful mathematical expressions.
+
+### Inline Math
+
+Use single dollar signs for inline math:
+
+```python
+mo.md(
+    r"""
+    The quadratic formula is $x = \frac{{-b \pm \sqrt{{b^2 - 4ac}}}}{{2a}}$.
+    """
+)
+```
+
+<Tip>
+  Use raw strings (prefix with `r`) to avoid escaping backslashes in LaTeX.
+</Tip>
+
+### Display Math
+
+Use double dollar signs or square brackets for display math:
+
+```python
+mo.md(
+    r"""
+    The exponential function can be represented as:
+    
+    $$
+    f(x) = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \ldots
+    $$
+    """
+)
+```
+
+Or using square brackets:
+
+```python
+mo.md(
+    r"""
+    The exponential function $f(x) = e^x$ can be represented as
+    
+    \[
+        f(x) = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \ldots.
+    \]
+    """
+)
+```
+
+### Dynamic Math
+
+Combine LaTeX with Python variables:
+
+```python
+import math
+
+x = mo.ui.slider(0, 10, value=5)
+
+mo.md(f"""
+# Trigonometric Functions
+
+Input value: {x}
+
+$$
+\sin({x.value}) = {math.sin(x.value):.4f}
+$$
+
+$$
+\cos({x.value}) = {math.cos(x.value):.4f}
+$$
+""")
+```
+
+## Loading LaTeX from Files
+
+For LaTeX macros or preambles, use `mo.latex()`:
+
+```python
+# Load from local file
+mo.latex(filename="macros.tex")
+```
+
+```python
+# Load from URL
+mo.latex(filename="https://example.com/macros.tex")
+```
+
+This is useful for defining custom LaTeX commands that you want to use throughout your notebook.
+
+## Markdown Extensions
+
+marimo supports many markdown extensions for rich formatting:
+
+### Tables
+
+```python
+mo.md(
+    """
+    | Name    | Age | City |
+    |---------|-----|------|
+    | Alice   | 25  | NYC  |
+    | Bob     | 30  | SF   |
+    | Charlie | 35  | LA   |
+    """
+)
+```
+
+### Task Lists
+
+```python
+mo.md(
+    """
+    - [x] Complete task 1
+    - [x] Complete task 2
+    - [ ] Complete task 3
+    """
+)
+```
+
+### Code Blocks with Syntax Highlighting
+
+````python
+mo.md(
+    """
+    Here's a Python code example:
+    
+    ```python
+    def fibonacci(n):
+        if n <= 1:
+            return n
+        return fibonacci(n-1) + fibonacci(n-2)
+    ```
+    """
+)
+````
+
+### Python Console Sessions
+
+marimo automatically detects Python console sessions:
+
+````python
+mo.md(
+    """
+    ```
+    >>> print("Hello, world!")
+    Hello, world!
+    >>> 2 + 2
+    4
+    ```
+    """
+)
+````
+
+### Emojis
+
+```python
+mo.md(
+    """
+    Emojis work too! :smile: :heart: :rocket:
+    """
+)
+```
+
+### Footnotes
+
+```python
+mo.md(
+    """
+    Here's a statement with a footnote[^1].
+    
+    [^1]: This is the footnote text.
+    """
+)
+```
+
+### Strikethrough and Formatting
+
+```python
+mo.md(
+    """
+    - ~~Strikethrough text~~
+    - ==Highlighted text==
+    - H~2~O (subscript)
+    - X^2^ (superscript)
+    """
+)
+```
+
+### Keyboard Keys
+
+```python
+mo.md(
+    """
+    Press ++ctrl+c++ to copy.
+    """
+)
+```
+
+### Admonitions
+
+Create callout boxes:
+
+```python
+mo.md(
+    """
+    !!! note "Important Note"
+        This is an important note about something.
+    
+    !!! warning
+        Be careful with this operation!
+    
+    !!! tip
+        Here's a helpful tip.
+    """
+)
+```
+
+## Embedding HTML Objects
+
+Embed plots, charts, and other visualizations:
+
+```python
+import matplotlib.pyplot as plt
+
+plt.plot([1, 2, 3], [4, 5, 6])
+axis = plt.gca()
+
+mo.md(f"""
+# Plot Example
+
+Here's a matplotlib plot:
+
+{mo.as_html(axis)}
+""")
+```
+
+<Tip>
+  Use `mo.as_html()` to convert non-HTML objects (like matplotlib plots) into HTML for embedding in markdown.
+</Tip>
+
+## Multi-line Strings
+
+Use triple quotes for multi-line markdown:
+
+```python
+mo.md(
+    """
+    # Title
+    
+    This is a long markdown document
+    that spans multiple lines.
+    
+    ## Section 1
+    
+    Content here...
+    
+    ## Section 2
+    
+    More content...
+    """
+)
+```
+
+marimo's `md()` function automatically strips leading whitespace using Python's `cleandoc`, so indentation in your Python code doesn't affect the rendered output.
+
+## Advanced Examples
+
+### Interactive Dashboard
+
+```python
+import pandas as pd
+import altair as alt
+
+# Create UI elements
+metric = mo.ui.dropdown(
+    options=["sales", "profit", "quantity"],
+    value="sales",
+    label="Metric"
+)
+
+region = mo.ui.multiselect(
+    options=["North", "South", "East", "West"],
+    value=["North"],
+    label="Regions"
+)
+
+mo.md(f"""
+# Sales Dashboard
+
+## Controls
+
+{metric} {region}
+
+## Results
+
+Showing **{metric.value}** for regions: **{', '.join(region.value)}**
+""")
+```
+
+### Mathematical Document
+
+```python
+n = mo.ui.slider(1, 10, value=5, label="n")
+
+mo.md(f"""
+# Taylor Series
+
+The Taylor series expansion of $e^x$ around $x=0$ is:
+
+$$
+e^x = \sum_{{n=0}}^{{\infty}} \frac{{x^n}}{{n!}}
+$$
+
+Truncated to {n} terms: {n.value}
+
+$$
+e^x \approx \sum_{{n=0}}^{{{n.value}}} \frac{{x^n}}{{n!}}
+$$
+""")
+```
+
+### Data Summary
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    "product": ["A", "B", "C"],
+    "sales": [100, 200, 150]
+})
+
+total_sales = df["sales"].sum()
+average_sales = df["sales"].mean()
+
+mo.md(f"""
+# Sales Report
+
+## Summary Statistics
+
+- **Total Sales:** ${total_sales:,.2f}
+- **Average Sales:** ${average_sales:,.2f}
+- **Products:** {len(df)}
+
+## Top Product
+
+The top-selling product is **{df.loc[df['sales'].idxmax(), 'product']}** 
+with **${df['sales'].max():,.2f}** in sales.
+""")
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use raw strings for LaTeX">
+    Always use `r"""` for strings containing LaTeX to avoid escaping backslashes.
+  </Step>
+  
+  <Step title="Separate content from logic">
+    Create UI elements and calculations in separate cells, then reference them in markdown.
+  </Step>
+  
+  <Step title="Format numbers appropriately">
+    Use Python's formatting (`:.2f`, `:,.0f`) to make numbers readable.
+  </Step>
+  
+  <Step title="Leverage f-strings">
+    Use f-strings for clean, readable variable interpolation.
+  </Step>
+</Steps>
+
+<CardGroup cols={2}>
+  <Card title="Dynamic" icon="bolt">
+    Markdown updates automatically when variables change
+  </Card>
+  <Card title="Rich Formatting" icon="palette">
+    Tables, code blocks, math, emojis, and more
+  </Card>
+  <Card title="Interactive" icon="hand-pointer">
+    Embed UI elements directly in markdown
+  </Card>
+  <Card title="Extensible" icon="puzzle-piece">
+    Supports many markdown extensions out of the box
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Form with Markdown
+
+```python
+form = mo.ui.batch(
+    name=mo.ui.text(label="Name"),
+    email=mo.ui.text(label="Email"),
+    age=mo.ui.number(start=0, stop=120, label="Age")
+).form()
+
+form
+```
+
+```python
+mo.md(f"""
+# User Information
+
+{form}
+
+## Submitted Data
+
+- **Name:** {form.value['name']}
+- **Email:** {form.value['email']}
+- **Age:** {form.value['age']}
+""")
+```
+
+### Conditional Content
+
+```python
+show_details = mo.ui.checkbox(label="Show details")
+
+details = f"""
+## Detailed Information
+
+This is additional information that's only shown when requested.
+""" if show_details.value else ""
+
+mo.md(f"""
+# Report
+
+{show_details}
+
+{details}
+""")
+```
+
+<Tip>
+  Markdown in marimo is reactive - when any interpolated variable changes, the markdown automatically re-renders with the new values!
+</Tip>

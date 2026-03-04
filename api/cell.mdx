@@ -1,0 +1,207 @@
+---
+title: 'Cell'
+description: 'Define reactive cells in marimo notebooks'
+---
+
+# Cell
+
+Cells are the fundamental building blocks of marimo notebooks. Each cell contains Python code that executes reactively based on variable dependencies.
+
+## Overview
+
+Cells in marimo are defined using the `@app.cell` decorator. Each cell:
+- Contains a Python function
+- Automatically tracks variable dependencies
+- Re-executes when dependencies change
+- Returns variables to make them available to other cells
+
+## Basic Usage
+
+```python
+@app.cell
+def __():
+    import marimo as mo
+    import numpy as np
+    return mo, np
+```
+
+Variables returned from a cell are available to cells that depend on them.
+
+## Cell Structure
+
+### Function Name
+
+Cells can have any function name. Using `__()` is a convention for cells that don't need a specific name.
+
+```python
+@app.cell
+def process_data(df):
+    # This cell depends on 'df' and will re-run when df changes
+    processed = df.dropna()
+    return processed,
+```
+
+### Returns
+
+Variables must be returned in a tuple to be available to other cells:
+
+```python
+@app.cell
+def __():
+    x = 1
+    y = 2
+    return x, y  # Both x and y are now available
+```
+
+<Warning>
+Variables not returned are local to the cell and won't be accessible to other cells.
+</Warning>
+
+## Cell Configuration
+
+The `@app.cell` decorator accepts configuration options:
+
+<ParamField path="hide_code" type="bool" default="False">
+  Hide the cell code when running in app mode
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Disable the cell from executing
+</ParamField>
+
+```python
+@app.cell(hide_code=True)
+def __():
+    import marimo as mo
+    mo.md("This cell's code is hidden in app mode")
+    return
+```
+
+## Reactive Execution
+
+marimo automatically determines the execution order based on variable dependencies:
+
+```python
+@app.cell
+def __():
+    # Cell 1: Define a variable
+    x = 10
+    return x,
+
+@app.cell
+def __(x):
+    # Cell 2: Depends on x
+    # Re-runs automatically when x changes
+    y = x * 2
+    return y,
+
+@app.cell
+def __(y):
+    # Cell 3: Depends on y
+    # Re-runs when y changes (which happens when x changes)
+    print(f"Result: {y}")
+    return
+```
+
+## Multiple Definitions
+
+marimo prevents multiple definitions of the same variable:
+
+```python
+@app.cell
+def __():
+    x = 1
+    return x,
+
+@app.cell
+def __():
+    # ERROR: x is already defined
+    x = 2
+    return x,
+```
+
+<Note>
+This prevents hidden state and ensures notebook reproducibility.
+</Note>
+
+## Variable References
+
+Access all variables defined by a cell:
+
+```python
+@app.cell
+def cell_name():
+    a = 1
+    b = 2
+    return a, b
+
+# Access cell's defined variables
+cell_name.defs  # {'a', 'b'}
+```
+
+Access all variables referenced by a cell:
+
+```python
+@app.cell
+def another_cell(a, b):
+    c = a + b
+    return c,
+
+# Access cell's referenced variables
+another_cell.refs  # {'a', 'b'}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep cells focused">
+    Each cell should perform one logical operation. This makes dependencies clearer and enables better reactivity.
+  </Accordion>
+
+  <Accordion title="Return all needed variables">
+    Always return variables that other cells need to access. Forgetting to return a variable is a common mistake.
+  </Accordion>
+
+  <Accordion title="Avoid side effects">
+    Minimize side effects in cells (file writes, API calls) as cells may re-execute when dependencies change.
+  </Accordion>
+
+  <Accordion title="Use descriptive names">
+    When a cell performs an important operation, give it a descriptive function name instead of `__()`.
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Features
+
+### Lazy Execution
+
+Configure the runtime to mark cells as stale instead of auto-executing:
+
+```python
+# In notebook configuration
+[runtime]
+auto_instantiate = false
+```
+
+### Disabling Cells
+
+Temporarily disable a cell from executing:
+
+```python
+@app.cell(disabled=True)
+def __():
+    # This cell won't execute
+    expensive_computation()
+    return
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="App" icon="window" href="/api/app">
+    Learn about marimo Apps
+  </Card>
+  <Card title="Reactivity" icon="arrows-spin" href="/reactivity">
+    Understanding reactive execution
+  </Card>
+</CardGroup>

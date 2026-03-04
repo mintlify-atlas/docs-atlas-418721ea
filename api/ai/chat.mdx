@@ -1,0 +1,127 @@
+---
+title: ChatMessage
+---
+
+A message in a chat.
+
+## Usage
+
+```python
+import marimo as mo
+
+# Create a user message
+message = mo.ai.ChatMessage(
+    role="user",
+    content="Hello, how are you?",
+    id="msg-1"
+)
+```
+
+```python
+# Create an assistant message with parts
+message = mo.ai.ChatMessage(
+    role="assistant",
+    content="I'm doing well, thank you!",
+    id="msg-2",
+    parts=[
+        {"type": "text", "text": "I'm doing well, thank you!"}
+    ]
+)
+```
+
+```python
+# Create a message with attachments
+attachment = mo.ai.ChatAttachment(
+    url="https://example.com/image.png",
+    name="example.png"
+)
+
+message = mo.ai.ChatMessage(
+    role="user",
+    content="Look at this image",
+    id="msg-3",
+    attachments=[attachment]
+)
+```
+
+## Signature
+
+```python
+mo.ai.ChatMessage(
+    role: Literal["user", "assistant", "system"],
+    content: Any,
+    id: str = "",
+    parts: list[ChatPart] = [],
+    attachments: Optional[list[ChatAttachment]] = None,
+    metadata: Any | None = None
+)
+```
+
+## Parameters
+
+<ParamField path="role" type="Literal['user', 'assistant', 'system']" required>
+  The role of the message.
+</ParamField>
+
+<ParamField path="content" type="Any" required>
+  The content of the message. This can be a rich Python object.
+</ParamField>
+
+<ParamField path="id" type="str" default="''">
+  The id of the message.
+</ParamField>
+
+<ParamField path="parts" type="list[ChatPart]" default="[]">
+  Parts from AI SDK Stream Protocol (must be serializable to JSON).
+</ParamField>
+
+<ParamField path="attachments" type="Optional[list[ChatAttachment]]" default="None">
+  Optional attachments to the message.
+</ParamField>
+
+<ParamField path="metadata" type="Any | None" default="None">
+  Optional metadata.
+</ParamField>
+
+## Part Types
+
+### TextPart
+
+Represents a text content part.
+
+**Attributes:**
+- `type` (Literal["text"]): Part type
+- `text` (str): The text content
+
+### ReasoningPart
+
+Represents a reasoning content part.
+
+**Attributes:**
+- `type` (Literal["reasoning"]): Part type
+- `text` (str): The reasoning text
+- `details` (Optional[list[ReasoningDetails]]): Optional reasoning details
+
+### ToolInvocationPart
+
+Represents a tool invocation part from the AI SDK.
+
+**Attributes:**
+- `type` (str): Starts with "tool-"
+- `tool_call_id` (str): The tool call identifier
+- `state` (Union[str, Literal["output-available"]]): The state of the invocation
+- `input` (dict[str, Any]): The input to the tool
+- `output` (Optional[Any]): The output from the tool
+
+**Properties:**
+- `tool_name`: Returns the tool name (extracted from type)
+
+### FilePart
+
+Represents a FileUIPart from the AI SDK.
+
+**Attributes:**
+- `type` (Literal["file"]): Part type
+- `media_type` (str): The media type
+- `url` (str): The file URL
+- `filename` (Optional[str]): Optional filename

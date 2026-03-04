@@ -1,0 +1,155 @@
+---
+title: 'App'
+description: 'Create and run marimo applications'
+---
+
+# mo.App
+
+The `App` class is the core container for marimo notebooks. It represents a collection of cells that form a reactive computational graph.
+
+## Overview
+
+A marimo app is created using the `@app.cell` decorator to define cells. The app manages the reactive execution of cells based on their dependencies.
+
+## Creating an App
+
+```python
+import marimo
+
+__generated_with = "0.20.3"
+app = marimo.App(width="medium")
+
+
+@app.cell
+def __():
+    import marimo as mo
+    return mo,
+
+
+@app.cell
+def __(mo):
+    name = mo.ui.text(placeholder="Enter your name")
+    name
+    return name,
+
+
+@app.cell
+def __(mo, name):
+    mo.md(f"Hello, {name.value}!")
+    return
+```
+
+## App Configuration
+
+<ParamField path="width" type="'normal' | 'medium' | 'full'" default="'normal'">
+  Controls the width of the notebook layout
+</ParamField>
+
+<ParamField path="app_title" type="str">
+  Title displayed in the browser tab
+</ParamField>
+
+<ParamField path="css_file" type="str">
+  Path to custom CSS file for styling
+</ParamField>
+
+## Decorators
+
+### @app.cell
+
+Defines a cell in the marimo app. Cells are executed reactively based on their dependencies.
+
+```python
+@app.cell
+def cell_name():
+    # Cell code here
+    x = 1
+    y = 2
+    return x, y
+```
+
+<ParamField path="hide_code" type="bool" default="False">
+  Whether to hide the cell code in app mode
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether the cell is disabled
+</ParamField>
+
+## Running Apps
+
+Apps can be run in three modes:
+
+1. **Edit mode**: Interactive development environment
+```bash
+marimo edit notebook.py
+```
+
+2. **Run mode**: View-only app with optional code hiding
+```bash
+marimo run notebook.py
+```
+
+3. **Script mode**: Execute as a Python script
+```bash
+python notebook.py
+```
+
+## Programmatic Execution
+
+```python
+from marimo import App
+
+app = App()
+
+@app.cell
+def __():
+    import marimo as mo
+    return mo,
+
+# Run the app
+if __name__ == "__main__":
+    app.run()
+```
+
+## App Methods
+
+### app.run()
+
+Execute the app as a script. This runs all cells in dependency order.
+
+### app.export_html()
+
+Export the app to a standalone HTML file.
+
+```python
+app.export_html("output.html")
+```
+
+## ASGI Integration
+
+Create an ASGI app for deployment:
+
+```python
+from marimo import create_asgi_app
+
+# Create ASGI app from notebook file
+asgi_app = create_asgi_app()
+    .with_app(path="/", root="notebook.py")
+    .build()
+```
+
+<Tip>
+Apps are stored as pure Python files, making them git-friendly and executable as scripts.
+</Tip>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Cell" icon="square" href="/api/cell">
+    Learn about marimo cells
+  </Card>
+  <Card title="Creating Notebooks" icon="plus" href="/creating-notebooks">
+    Guide to creating marimo notebooks
+  </Card>
+</CardGroup>

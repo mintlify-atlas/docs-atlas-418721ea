@@ -1,0 +1,308 @@
+---
+title: 'marimo config'
+description: 'Manage marimo configuration settings'
+---
+
+# marimo config
+
+Manage marimo configuration settings including user preferences and project-specific overrides.
+
+## Usage
+
+```bash
+marimo config <COMMAND>
+```
+
+## Commands
+
+- **show** - Display current configuration
+- **describe** - Show documentation for all config options
+
+---
+
+## marimo config show
+
+Display the current marimo configuration including user settings and project overrides.
+
+### Usage
+
+```bash
+marimo config show
+```
+
+### Output
+
+The command displays:
+
+1. **Project overrides** - Settings from the nearest `pyproject.toml` (if any)
+2. **User config** - Global user settings from the user config file
+
+### Examples
+
+```bash
+# Show current configuration
+marimo config show
+```
+
+Example output:
+
+```
+📁 Project overrides from /path/to/pyproject.toml
+
+[tool.marimo]
+autosave = "on_idle"
+autosave_delay = 2000
+
+🏠 User config from ~/.marimo.toml
+
+[completion]
+autocomplete = true
+activate_on_typing = true
+copliot = false
+
+[save]
+autosave = "after_delay"
+autosave_delay = 1000
+format_on_save = false
+
+[runtime]
+auto_instantiate = true
+```
+
+### Configuration Hierarchy
+
+marimo uses a two-level configuration system:
+
+1. **User config** - Global settings in `~/.marimo.toml`
+2. **Project config** - Overrides in `pyproject.toml` under `[tool.marimo]`
+
+Project settings take precedence over user settings.
+
+---
+
+## marimo config describe
+
+Show detailed documentation for all available configuration options.
+
+### Usage
+
+```bash
+marimo config describe
+```
+
+### Output
+
+Displays comprehensive documentation for every config option including:
+- Configuration section names
+- Available settings
+- Data types
+- Descriptions
+
+### Examples
+
+```bash
+# View all config documentation
+marimo config describe
+```
+
+Example output:
+
+```
+# marimo configuration
+
+[completion]
+  autocomplete: bool
+  activate_on_typing: bool
+  copilot: bool
+
+[save]
+  autosave: Literal['off', 'after_delay', 'on_idle']
+  autosave_delay: int
+  format_on_save: bool
+  module_autoreload: bool
+
+[runtime]
+  auto_instantiate: bool
+  on_cell_change: Literal['lazy', 'autorun']
+  ...
+```
+
+---
+
+## Configuration File Locations
+
+### User Configuration
+
+**Location**: `~/.marimo.toml` (or platform-specific config directory)
+
+**Create/Edit**:
+
+```bash
+# The file is created automatically when you run marimo
+# Edit it directly with your preferred editor
+vim ~/.marimo.toml
+```
+
+### Project Configuration
+
+**Location**: `pyproject.toml` in your project directory
+
+**Format**:
+
+```toml
+[tool.marimo]
+autosave = "on_idle"
+autosave_delay = 2000
+format_on_save = true
+```
+
+## Common Configuration Options
+
+### Autosave Settings
+
+```toml
+[save]
+autosave = "after_delay"  # Options: "off", "after_delay", "on_idle"
+autosave_delay = 1000     # Milliseconds
+format_on_save = false
+```
+
+### Code Completion
+
+```toml
+[completion]
+autocomplete = true
+activate_on_typing = true
+copilot = false
+```
+
+### Runtime Behavior
+
+```toml
+[runtime]
+auto_instantiate = true
+on_cell_change = "autorun"  # Options: "lazy", "autorun"
+```
+
+### Server Settings
+
+```toml
+[server]
+browser = "default"  # Or specify browser command
+host = "127.0.0.1"
+port = 2718
+```
+
+### Display Settings
+
+```toml
+[display]
+theme = "light"  # Options: "light", "dark", "system"
+code_editor_font_size = 14
+cell_output = "above"  # Options: "above", "below"
+```
+
+## Examples
+
+### View Current Settings
+
+```bash
+# See what configuration is active
+marimo config show
+```
+
+### Learn About Available Options
+
+```bash
+# View all configuration options and their types
+marimo config describe
+```
+
+### Set Up Project-Specific Config
+
+1. Create or edit `pyproject.toml` in your project:
+
+```toml
+[tool.marimo]
+autosave = "on_idle"
+format_on_save = true
+```
+
+2. Verify the settings:
+
+```bash
+marimo config show
+```
+
+### Configure User Defaults
+
+1. Edit your user config file:
+
+```bash
+vim ~/.marimo.toml
+```
+
+2. Add your preferences:
+
+```toml
+[completion]
+autocomplete = true
+copilot = true
+
+[save]
+autosave = "after_delay"
+format_on_save = true
+
+[display]
+theme = "dark"
+```
+
+3. Verify:
+
+```bash
+marimo config show
+```
+
+## Tips
+
+- Use `marimo config show` to verify your settings are loaded correctly
+- Use `marimo config describe` to discover available options
+- Project configs override user configs - great for team settings
+- User configs apply to all notebooks by default
+- TOML format is simple and human-readable
+- Configuration files are created automatically on first run
+
+## Configuration in Practice
+
+### Team Collaboration
+
+Add to your project's `pyproject.toml`:
+
+```toml
+[tool.marimo]
+# Ensure consistent formatting across the team
+format_on_save = true
+autosave = "on_idle"
+
+# Consistent runtime behavior
+[tool.marimo.runtime]
+auto_instantiate = true
+```
+
+### Personal Preferences
+
+Set in `~/.marimo.toml`:
+
+```toml
+[display]
+theme = "dark"
+code_editor_font_size = 16
+
+[completion]
+copilot = true
+```
+
+## Related Commands
+
+- [marimo edit](/cli/edit) - Start editing with your config
+- [marimo run](/cli/run) - Run notebooks with your config

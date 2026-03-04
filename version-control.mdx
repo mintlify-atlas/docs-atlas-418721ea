@@ -1,0 +1,546 @@
+---
+title: Version Control
+description: Learn how to use Git with marimo notebooks, including best practices for diffing, merging, and collaborating on notebook code.
+---
+
+marimo notebooks are designed from the ground up to work seamlessly with version control systems like Git. Unlike traditional JSON-based notebooks, marimo stores notebooks as pure Python files, making them naturally compatible with standard developer workflows.
+
+## Git-Friendly Architecture
+
+marimo notebooks are stored as `.py` files, which provides significant advantages for version control:
+
+- **Plain text format**: Easy to read, diff, and merge
+- **No JSON metadata**: No hidden state or execution counts
+- **Standard Python syntax**: Works with all Python tools
+- **Meaningful diffs**: See actual code changes, not format noise
+
+### Notebook File Structure
+
+A marimo notebook is a standard Python script:
+
+```python
+import marimo
+
+__generated_with = "0.20.3"
+app = marimo.App()
+
+@app.cell
+def __():
+    import pandas as pd
+    import numpy as np
+    return pd, np
+
+@app.cell
+def __(pd, np):
+    df = pd.DataFrame(np.random.randn(100, 3))
+    return df,
+
+if __name__ == "__main__":
+    app.run()
+```
+
+This structure makes it easy to:
+- Review changes in pull requests
+- Track code evolution over time
+- Merge contributions from multiple authors
+- Revert problematic changes
+
+## Working with Git
+
+### Initializing a Repository
+
+marimo notebooks work with standard Git workflows:
+
+```bash
+# Initialize a Git repository
+git init
+
+# Add marimo notebooks
+git add notebook.py
+
+# Commit changes
+git commit -m "Add data analysis notebook"
+```
+
+### Viewing Changes
+
+Use standard Git commands to view notebook changes:
+
+```bash
+# View changes in a notebook
+git diff notebook.py
+
+# View changes between branches
+git diff main feature-branch -- notebook.py
+
+# View change history
+git log --oneline notebook.py
+```
+
+Because notebooks are Python files, the diffs are meaningful and show actual code changes:
+
+```diff
+ @app.cell
+ def __(pd):
+-    df = pd.read_csv('data.csv')
++    df = pd.read_csv('data_cleaned.csv')
++    df = df.dropna()
+     return df,
+```
+
+### Committing Notebooks
+
+Commit notebooks like any other Python file:
+
+```bash
+# Stage changes
+git add notebook.py
+
+# Commit with descriptive message
+git commit -m "Add data cleaning step to analysis"
+
+# Push to remote
+git push origin main
+```
+
+<Tip>
+**Write clear commit messages** that describe the notebook's analytical changes, not just code modifications:
+
+✅ `"Add correlation analysis and visualization"`
+
+❌ `"Update notebook.py"`
+</Tip>
+
+## Diffing and Merging
+
+marimo's Python-based format makes diffing and merging straightforward.
+
+### Understanding Notebook Diffs
+
+When reviewing changes, focus on:
+
+1. **Cell content**: The actual code logic within `@app.cell` decorators
+2. **Cell dependencies**: Changes to function parameters (e.g., `def __(pd, np)`)
+3. **Return values**: What each cell exports (e.g., `return df,`)
+4. **Imports**: New or modified dependencies
+
+### Merging Changes
+
+merge branches using standard Git commands:
+
+```bash
+# Merge a feature branch
+git merge feature-branch
+
+# Resolve conflicts if they arise
+git mergetool
+```
+
+### Handling Merge Conflicts
+
+When conflicts occur, they appear as standard Python code conflicts:
+
+```python
+@app.cell
+def __(pd):
+<<<<<<< HEAD
+    df = pd.read_csv('old_data.csv')
+=======
+    df = pd.read_csv('new_data.csv')
+>>>>>>> feature-branch
+    return df,
+```
+
+Resolve conflicts by:
+
+1. Editing the file to choose or combine changes
+2. Removing conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+3. Testing the notebook: `marimo edit notebook.py`
+4. Committing the resolution: `git add notebook.py && git commit`
+
+<Note>
+After resolving conflicts, always run the notebook to ensure cells execute correctly and dependencies are maintained.
+</Note>
+
+### Rebase Workflows
+
+marimo notebooks work seamlessly with rebasing:
+
+```bash
+# Rebase onto main
+git rebase main
+
+# Interactive rebase for cleaner history
+git rebase -i main
+```
+
+Because notebooks are Python files, rebase operations preserve code structure and don't introduce spurious changes.
+
+## Collaboration Workflows
+
+marimo's Git compatibility enables effective team collaboration.
+
+### Pull Request Best Practices
+
+When creating pull requests with notebook changes:
+
+<Accordion title="1. Provide context in PR descriptions">
+
+Explain the analytical or scientific changes:
+
+```markdown
+## Summary
+Adds correlation analysis between user engagement metrics
+
+## Changes
+- New cell computing Pearson correlation matrix
+- Visualization of correlation heatmap using seaborn
+- Statistical significance testing for key correlations
+
+## Results
+Found strong correlation (r=0.82) between time_on_site and conversion_rate
+```
+
+</Accordion>
+
+<Accordion title="2. Keep PRs focused">
+
+Limit each PR to a single analysis or feature:
+
+✅ One PR: Add new data cleaning pipeline
+
+✅ Separate PR: Add visualization for cleaned data
+
+❌ One large PR: Refactor, add features, change visualizations
+
+</Accordion>
+
+<Accordion title="3. Test before submitting">
+
+Ensure the notebook runs completely:
+
+```bash
+# Run notebook as script to verify
+python notebook.py
+
+# Or run in marimo editor
+marimo edit notebook.py
+```
+
+</Accordion>
+
+<Accordion title="4. Document dependencies">
+
+If you add new packages, document them:
+
+```python
+# At the top of your notebook
+import marimo as mo
+import pandas as pd
+import seaborn as sns  # New dependency for heatmaps
+```
+
+Or use marimo's package management to inline dependencies:
+
+```toml title="pyproject.toml"
+[project]
+dependencies = [
+    "pandas>=1.5",
+    "seaborn>=0.12",
+]
+```
+
+</Accordion>
+
+### Code Review Tips
+
+When reviewing notebook changes:
+
+<Tabs>
+  <Tab title="Reviewer">
+
+**Focus on:**
+
+1. **Logic correctness**: Are the data transformations valid?
+2. **Cell dependencies**: Do cells reference the right variables?
+3. **Reactivity**: Will cells update correctly when dependencies change?
+4. **Performance**: Are there expensive operations that could be optimized?
+5. **Documentation**: Are complex cells explained with comments?
+
+**Test the notebook:**
+
+```bash
+# Checkout the PR branch
+git checkout feature-branch
+
+# Run the notebook
+marimo edit notebook.py
+
+# Verify all cells execute without errors
+```
+
+  </Tab>
+  <Tab title="Author">
+
+**Make review easier:**
+
+1. **Add comments**: Explain complex analytical decisions
+2. **Use descriptive variable names**: `user_engagement_df` not `df2`
+3. **Break up large changes**: Multiple focused commits
+4. **Test thoroughly**: Ensure all cells run top-to-bottom
+5. **Document assumptions**: Note data requirements or constraints
+
+**Example of well-documented change:**
+
+```python
+@app.cell
+def __(df):
+    # Filter to active users (logged in within last 30 days)
+    # This threshold was determined in consultation with Product team
+    from datetime import datetime, timedelta
+    cutoff = datetime.now() - timedelta(days=30)
+    active_users = df[df['last_login'] >= cutoff]
+    return active_users,
+```
+
+  </Tab>
+</Tabs>
+
+### Shared Configuration
+
+Share team configurations using `pyproject.toml`:
+
+```toml title="pyproject.toml"
+[tool.marimo.display]
+default_width = "full"
+theme = "light"
+
+[tool.marimo.formatting]
+line_length = 88  # Black-compatible
+
+[tool.marimo.runtime]
+on_cell_change = "autorun"
+
+[tool.marimo.package_management]
+manager = "uv"  # Team standard
+```
+
+Commit this file to ensure consistent notebook behavior across the team.
+
+## Git Workflow Patterns
+
+### Feature Branch Workflow
+
+```bash
+# Create feature branch
+git checkout -b analysis/user-segmentation
+
+# Make changes to notebook
+marimo edit analysis.py
+
+# Commit changes
+git add analysis.py
+git commit -m "Add user segmentation analysis"
+
+# Push and create PR
+git push origin analysis/user-segmentation
+```
+
+### Trunk-Based Development
+
+```bash
+# Always work on latest main
+git checkout main
+git pull origin main
+
+# Create short-lived branch
+git checkout -b quick-fix
+
+# Make focused change
+marimo edit notebook.py
+
+# Commit and merge quickly
+git add notebook.py
+git commit -m "Fix data filtering logic"
+git push origin quick-fix
+# Create and merge PR immediately
+```
+
+### Release Workflow
+
+```bash
+# Tag notebook versions
+git tag -a v1.0 -m "Initial analysis complete"
+git push origin v1.0
+
+# Create release branches for long-running analyses
+git checkout -b release/q4-2025
+git push origin release/q4-2025
+```
+
+## Advanced Git Features
+
+### Git Hooks
+
+Automate notebook quality checks with Git hooks:
+
+```bash title=".git/hooks/pre-commit"
+#!/bin/bash
+# Run notebooks to verify they execute
+for notebook in *.py; do
+    if grep -q "import marimo" "$notebook"; then
+        python "$notebook" || exit 1
+    fi
+done
+```
+
+Or use marimo's formatting:
+
+```bash title=".git/hooks/pre-commit"
+#!/bin/bash
+# Format notebooks before commit
+for notebook in *.py; do
+    if grep -q "import marimo" "$notebook"; then
+        marimo format "$notebook"
+        git add "$notebook"
+    fi
+done
+```
+
+### Git Attributes
+
+Optimize Git operations for notebooks:
+
+```bash title=".gitattributes"
+# Treat marimo notebooks as Python
+*.py diff=python
+
+# Use Python syntax highlighting in GitHub
+*.py linguist-language=Python
+```
+
+### Git Ignore
+
+Exclude marimo-specific temporary files:
+
+```bash title=".gitignore"
+# marimo cache and logs
+.marimo.toml  # If user-specific
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+.venv/
+venv/
+
+# Data files (if not version controlled)
+data/*.csv
+data/*.parquet
+```
+
+<Note>
+The global `~/.config/marimo/marimo.toml` is user-specific and should not be committed. However, project-specific `.marimo.toml` or `pyproject.toml` configurations should be version controlled.
+</Note>
+
+## Comparing with Jupyter Notebooks
+
+marimo's version control advantages over Jupyter:
+
+| Feature | marimo | Jupyter (`.ipynb`) |
+|---------|--------|--------------------|
+| File format | Pure Python | JSON |
+| Diff readability | ✅ Readable | ❌ Noisy metadata |
+| Merge conflicts | ✅ Standard Python | ❌ JSON structure |
+| Code review | ✅ Easy | ❌ Difficult |
+| Execution order | ✅ Deterministic | ❌ Can vary |
+| Hidden state | ❌ None | ⚠️ Can persist |
+| Git tools | ✅ All work | ⚠️ Need special tools |
+
+### Converting from Jupyter
+
+Convert Jupyter notebooks to marimo for better version control:
+
+```bash
+# Convert .ipynb to marimo .py
+marimo convert notebook.ipynb > notebook.py
+
+# Remove old .ipynb from Git
+git rm notebook.ipynb
+git add notebook.py
+git commit -m "Convert to marimo for better version control"
+```
+
+## Best Practices Summary
+
+<Accordion title="✅ Do">
+
+- Commit notebooks as `.py` files
+- Write descriptive commit messages about analytical changes
+- Test notebooks before committing (run all cells)
+- Use branches for experimental analyses
+- Share configuration via `pyproject.toml`
+- Review diffs carefully for cell dependencies
+- Document complex analytical decisions in comments
+- Use standard Git workflows (PRs, code review)
+
+</Accordion>
+
+<Accordion title="❌ Don't">
+
+- Don't commit `.marimo.toml` user configs (unless project-specific)
+- Don't make unrelated changes in a single commit
+- Don't commit untested notebooks
+- Don't ignore merge conflicts without testing
+- Don't commit sensitive data or API keys
+- Don't use notebooks for compiled outputs (use scripts)
+
+</Accordion>
+
+## Troubleshooting
+
+<Accordion title="Notebook won't run after merge">
+
+**Cause**: Merge conflict resolution broke cell dependencies
+
+**Solution**:
+1. Open in marimo editor: `marimo edit notebook.py`
+2. Check for syntax errors or missing variables
+3. Verify cell dependencies in the dataflow graph
+4. Run cells individually to identify the issue
+
+</Accordion>
+
+<Accordion title="Large diffs for small changes">
+
+**Cause**: Auto-formatting or dependency reordering
+
+**Solution**:
+1. Configure consistent formatting in `pyproject.toml`:
+   ```toml
+   [tool.marimo.formatting]
+   line_length = 88
+   ```
+2. Format before committing: `marimo format notebook.py`
+3. Ensure all team members use same marimo version
+
+</Accordion>
+
+<Accordion title="Sensitive data in commit history">
+
+**Cause**: Accidentally committed data or credentials
+
+**Solution**:
+1. Use BFG Repo-Cleaner or git-filter-repo to remove sensitive data
+2. Add data files to `.gitignore`
+3. Use environment variables for credentials (load from `.env`)
+4. Review commits before pushing: `git diff HEAD`
+
+</Accordion>
+
+## Related Documentation
+
+- [Configuration](configuration.mdx) - Sharing team configurations
+- [Debugging](debugging.mdx) - Fixing issues in notebooks
+- [Package Management](guides/editor_features/package_management.md) - Managing dependencies
+- [Scripts](guides/scripts.md) - Running notebooks as scripts

@@ -1,0 +1,79 @@
+---
+title: sql
+---
+
+Execute a SQL query.
+
+By default, this uses duckdb to execute the query. Any dataframes in the global namespace can be used inside the query.
+
+You can also pass a custom engine to execute queries against other databases.
+
+## Usage
+
+```python
+import marimo as mo
+
+# Execute a query using DuckDB
+result = mo.sql(
+    """
+    SELECT * FROM my_dataframe
+    WHERE column > 10
+    """
+)
+```
+
+```python
+# Use a custom engine
+from sqlalchemy import create_engine
+
+engine = create_engine('postgresql://user:password@localhost/dbname')
+result = mo.sql(
+    "SELECT * FROM table_name",
+    engine=engine
+)
+```
+
+## Signature
+
+```python
+mo.sql(
+    query: str,
+    *,
+    output: bool = True,
+    engine: Optional[DBAPIConnection] = None
+) -> Any
+```
+
+## Parameters
+
+<ParamField path="query" type="str" required>
+  The SQL query to execute.
+</ParamField>
+
+<ParamField path="output" type="bool" default="True">
+  Whether to display the result in the UI.
+</ParamField>
+
+<ParamField path="engine" type="Optional[DBAPIConnection]" default="None">
+  Optional SQL engine to use. Can be a SQLAlchemy, DuckDB, Clickhouse, Redshift, Ibis, or DB-API 2.0 compatible connection (including ADBC drivers). If `None`, uses DuckDB.
+</ParamField>
+
+## Returns
+
+<ParamField path="Any">
+  The result of the query.
+</ParamField>
+
+## Supported Engines
+
+- **DuckDB** (default): Automatically uses DuckDB if no engine is specified
+- **SQLAlchemy**: Pass a SQLAlchemy engine or connection
+- **Ibis**: Pass an Ibis connection
+- **Clickhouse**: Pass a Clickhouse connection
+- **Redshift**: Pass a Redshift connection
+- **DB-API 2.0**: Any PEP 249 compatible connection
+- **ADBC**: DB-API wrappers provided by ADBC drivers
+
+## Default Result Limit
+
+You can set a default result limit using the `MARIMO_SQL_DEFAULT_LIMIT` environment variable. If set, queries without an explicit LIMIT clause will be limited to this many rows.

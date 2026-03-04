@@ -1,0 +1,98 @@
+---
+title: plotly
+---
+
+Make reactive plots with Plotly.
+
+## Usage
+
+```python
+import plotly.express as px
+import marimo as mo
+from vega_datasets import data
+
+_plot = px.scatter(
+    data.cars(), x="Horsepower", y="Miles_per_Gallon", color="Origin"
+)
+
+plot = mo.ui.plotly(_plot)
+```
+
+```python
+# View the plot and selected data
+mo.hstack([plot, plot.value])
+```
+
+Or with custom configuration:
+
+```python
+plot = mo.ui.plotly(
+    _plot,
+    config={"staticPlot": True},
+)
+```
+
+## Signature
+
+```python
+mo.ui.plotly(
+    figure: plotly.graph_objects.Figure,
+    config: Optional[Dict[str, Any]] = None,
+    renderer_name: Optional[str] = None,
+    *,
+    label: str = "",
+    on_change: Optional[Callable[[JSONType], None]] = None
+)
+```
+
+## Parameters
+
+<ParamField path="figure" type="plotly.graph_objects.Figure" required>
+  A plotly Figure object.
+</ParamField>
+
+<ParamField path="config" type="Optional[Dict[str, Any]]" default="None">
+  Configuration for the plot. This is a dictionary that is passed directly to plotly. See the [plotly documentation](https://plotly.com/javascript/configuration-options/) for more information. This takes precedence over the default configuration of the renderer.
+</ParamField>
+
+<ParamField path="renderer_name" type="Optional[str]" default="None">
+  Renderer to use for the plot. If this is not provided, the default renderer (`pio.renderers.default`) is used.
+</ParamField>
+
+<ParamField path="label" type="str" default="">
+  Markdown label for the element.
+</ParamField>
+
+<ParamField path="on_change" type="Optional[Callable[[JSONType], None]]" default="None">
+  Callback to run when this element's value changes.
+</ParamField>
+
+## Attributes
+
+<ParamField path="value" type="Dict[str, Any]">
+  A dict of the plot data.
+</ParamField>
+
+<ParamField path="ranges" type="Dict[str, List[float]]">
+  The selection of the plot; this may be an interval along the name of an axis.
+</ParamField>
+
+<ParamField path="points" type="List[Dict[str, Any]]">
+  The selected points data.
+</ParamField>
+
+<ParamField path="indices" type="List[int]">
+  The indices of selected points.
+</ParamField>
+
+## Supported Chart Types
+
+This function supports:
+- Scatter plots
+- Scattergl plots
+- Line charts
+- Area charts
+- Bar charts
+- Treemap charts
+- Sunburst charts
+- Heatmaps

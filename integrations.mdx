@@ -1,0 +1,622 @@
+---
+title: Integrations
+description: Integrate marimo with VS Code, third-party tools, frameworks, and the Model Context Protocol (MCP)
+---
+
+# Integrations
+
+marimo integrates seamlessly with popular development tools, frameworks, and the broader Python ecosystem. This guide covers editor integrations, framework connections, and third-party tool support.
+
+## VS Code Extension
+
+marimo provides an official VS Code extension for editing and running notebooks directly in VS Code.
+
+### Installation
+
+<CodeGroup>
+
+```bash VS Code Marketplace
+# Install from VS Code marketplace
+# Search for "marimo" in Extensions
+# Publisher: marimo-team
+```
+
+```bash Command line
+# Install via CLI
+code --install-extension marimo-team.vscode-marimo
+```
+
+</CodeGroup>
+
+### Features
+
+- **Native notebook editing**: Edit `.py` marimo notebooks as notebooks in VS Code
+- **Cell execution**: Run cells individually or all at once
+- **Interactive outputs**: View plots, tables, and UI elements inline
+- **IntelliSense**: Full Python language support with completions and hover info
+- **Debugging**: Use VS Code's debugger with marimo notebooks
+- **Git integration**: Built-in diff and merge tools for notebook files
+
+### Usage
+
+```bash
+# Open a marimo notebook in VS Code
+code my_notebook.py
+
+# The extension automatically detects marimo notebooks
+# and provides the notebook interface
+```
+
+### Configuration
+
+Configure the extension in VS Code settings:
+
+```json
+{
+  "marimo.pythonPath": "/path/to/python",
+  "marimo.port": 2718,
+  "marimo.host": "localhost"
+}
+```
+
+<Note>
+  The VS Code extension runs a marimo server in the background. All editing happens in the browser-based marimo interface embedded in VS Code.
+</Note>
+
+## File Watching Mode
+
+Edit marimo notebooks in **any text editor** (Neovim, Zed, Emacs, etc.) with automatic reloading:
+
+```bash
+# Start marimo in watch mode
+marimo edit --watch notebook.py
+
+# Edit notebook.py in your favorite editor
+# Changes automatically reload in the browser
+```
+
+This enables:
+- Using your preferred editor/IDE
+- Vim keybindings, custom themes, plugins
+- Local development without browser-based editing
+
+## Framework Integrations
+
+marimo notebooks can be integrated with popular Python web frameworks.
+
+### FastAPI Integration
+
+Embed marimo notebooks as interactive endpoints in FastAPI applications:
+
+```python
+from fastapi import FastAPI
+import marimo
+import os
+
+# Create marimo server with multiple notebooks
+server = marimo.create_asgi_app()
+
+# Add notebooks as routes
+ui_dir = "./notebooks"
+for filename in os.listdir(ui_dir):
+    if filename.endswith(".py"):
+        app_name = os.path.splitext(filename)[0]
+        app_path = os.path.join(ui_dir, filename)
+        server = server.with_app(path=f"/{app_name}", root=app_path)
+
+# Create FastAPI app
+app = FastAPI()
+
+# Your FastAPI routes
+@app.get("/api/health")
+async def health():
+    return {"status": "healthy"}
+
+# Mount marimo server
+app.mount("/notebooks", server.build())
+
+# Run with: uvicorn main:app
+```
+
+### FastAPI with Authentication
+
+From `examples/frameworks/fastapi/main.py`:
+
+```python
+from fastapi import FastAPI, Request, Depends, HTTPException
+from starlette.middleware.sessions import SessionMiddleware
+import marimo
+
+app = FastAPI()
+
+# Add session middleware
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="your-secret-key"
+)
+
+# Authentication middleware
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    if request.url.path.startswith("/notebooks"):
+        if "username" not in request.session:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+    return await call_next(request)
+
+# Create and mount marimo server
+server = marimo.create_asgi_app().with_app(
+    path="/",
+    root="notebook.py"
+)
+
+app.mount("/notebooks", server.build())
+```
+
+### Flask Integration
+
+```python
+from flask import Flask
+import marimo
+
+app = Flask(__name__)
+
+# Create marimo ASGI app
+marimo_server = marimo.create_asgi_app().with_app(
+    path="/",
+    root="notebook.py"
+).build()
+
+# Mount using ASGI middleware
+from asgiref.wsgi import WsgiToAsgi
+app.wsgi_app = WsgiToAsgi(marimo_server)
+
+if __name__ == "__main__":
+    app.run()
+```
+
+### Starlette Integration
+
+```python
+from starlette.applications import Starlette
+from starlette.routing import Mount
+import marimo
+
+# Create marimo server
+marimo_app = marimo.create_asgi_app().with_app(
+    path="/",
+    root="analysis.py"
+).build()
+
+# Create Starlette app with marimo mounted
+app = Starlette(
+    routes=[
+        Mount("/dashboard", app=marimo_app),
+    ]
+)
+```
+
+## Third-Party Library Integrations
+
+marimo works with a wide ecosystem of Python libraries. Here are some highlighted integrations:
+
+### Data Visualization
+
+<CodeGroup>
+
+```python Plotly
+import plotly.graph_objects as go
+import marimo as mo
+
+fig = go.Figure(data=go.Scatter(x=[1, 2, 3], y=[4, 5, 6]))
+mo.ui.plotly(fig)  # Interactive Plotly charts
+```
+
+```python Altair
+import altair as alt
+import pandas as pd
+import marimo as mo
+
+df = pd.DataFrame({'x': [1, 2, 3], 'y': [4, 5, 6]})
+chart = alt.Chart(df).mark_point().encode(x='x', y='y')
+mo.ui.altair_chart(chart)  # Interactive selections
+```
+
+```python Matplotlib
+import matplotlib.pyplot as plt
+import marimo as mo
+
+plt.plot([1, 2, 3], [4, 5, 6])
+mo.mpl.interactive(plt.gcf())  # Interactive matplotlib
+```
+
+</CodeGroup>
+
+### Data Processing
+
+<CodeGroup>
+
+```python Polars
+import polars as pl
+import marimo as mo
+
+df = pl.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
+mo.ui.table(df)  # Interactive tables with filtering
+```
+
+```python DuckDB
+import duckdb
+import marimo as mo
+
+conn = duckdb.connect()
+result = conn.sql("SELECT * FROM data").df()
+mo.ui.dataframe(result)  # Explore millions of rows
+```
+
+```python Ibis
+import ibis
+import marimo as mo
+
+con = ibis.duckdb.connect()
+table = con.table('data')
+mo.ui.table(table.execute())  # Database query results
+```
+
+</CodeGroup>
+
+### Machine Learning
+
+<CodeGroup>
+
+```python Scikit-learn
+from sklearn.ensemble import RandomForestClassifier
+import marimo as mo
+
+model = RandomForestClassifier()
+model.fit(X_train, y_train)
+
+mo.md(f"Accuracy: {model.score(X_test, y_test):.2%}")
+```
+
+```python PyTorch
+import torch
+import torch.nn as nn
+import marimo as mo
+
+model = nn.Sequential(
+    nn.Linear(10, 5),
+    nn.ReLU(),
+    nn.Linear(5, 1)
+)
+
+mo.md(f"Model parameters: {sum(p.numel() for p in model.parameters())}")
+```
+
+```python HuggingFace
+from transformers import pipeline
+import marimo as mo
+
+classifier = pipeline("sentiment-analysis")
+result = classifier("I love marimo notebooks!")
+mo.ui.table(result)
+```
+
+</CodeGroup>
+
+### Geospatial
+
+```python
+import leafmap
+import marimo as mo
+
+# Create interactive map
+m = leafmap.Map(center=[40, -100], zoom=4)
+m.add_basemap("OpenStreetMap")
+
+mo.ui.anywidget(m)  # Embed leaflet maps
+```
+
+### Database Connections
+
+<CodeGroup>
+
+```python SQLAlchemy
+from sqlalchemy import create_engine
+import marimo as mo
+
+engine = create_engine('postgresql://user:pass@localhost/db')
+df = mo.sql(
+    f"SELECT * FROM users LIMIT 10",
+    engine=engine
+)
+```
+
+```python PyIceberg
+from pyiceberg.catalog import load_catalog
+import marimo as mo
+
+catalog = load_catalog("default")
+table = catalog.load_table("db.table")
+mo.ui.table(table.scan().to_pandas())
+```
+
+```python Databricks
+import databricks.sql as dbsql
+import marimo as mo
+
+with dbsql.connect(
+    server_hostname="your-workspace.cloud.databricks.com",
+    http_path="/sql/1.0/warehouses/your-warehouse-id",
+    access_token="your-token"
+) as conn:
+    df = mo.sql("SELECT * FROM table", engine=conn)
+```
+
+</CodeGroup>
+
+## Model Context Protocol (MCP)
+
+marimo supports the [Model Context Protocol](https://modelcontextprotocol.io/) for AI-powered development workflows.
+
+### What is MCP?
+
+MCP is a standard protocol for connecting AI models with development tools and data sources. It enables:
+
+- AI assistants to read and modify marimo notebooks
+- Context-aware code generation
+- Integration with Claude, GPT-4, and other LLMs
+- Tool-augmented AI interactions
+
+### Using MCP with marimo
+
+```python
+import marimo as mo
+
+# MCP-compatible AI completion
+code_suggestion = mo.ai.complete(
+    prompt="Create a bar chart of sales by region",
+    context={"available_data": df.columns.tolist()}
+)
+
+mo.md(f"```python\n{code_suggestion}\n```")
+```
+
+### Installing MCP Servers
+
+marimo can connect to MCP servers for enhanced functionality:
+
+```bash
+# Install marimo MCP server
+pip install marimo[mcp]
+
+# Configure MCP in marimo settings
+marimo config --mcp-servers '{"claude": {"endpoint": "..."}}}'
+```
+
+### Custom MCP Tools
+
+Create custom MCP tools for your workflows:
+
+```python
+from marimo.mcp import Tool
+
+class DataAnalysisTool(Tool):
+    name = "analyze_dataframe"
+    description = "Analyze a pandas DataFrame"
+    
+    def execute(self, df, analysis_type):
+        if analysis_type == "summary":
+            return df.describe()
+        elif analysis_type == "missing":
+            return df.isnull().sum()
+        # Add more analysis types...
+
+# Register tool with MCP
+mo.mcp.register_tool(DataAnalysisTool())
+```
+
+<Note>
+  MCP support is evolving. Check [marimo's documentation](https://docs.marimo.io) for the latest features.
+</Note>
+
+## Cloud Platforms
+
+### Deploying to Cloud
+
+marimo notebooks can be deployed to various cloud platforms:
+
+<CodeGroup>
+
+```bash Railway
+# Deploy marimo app to Railway
+marimo export html notebook.py > index.html
+# Or run as ASGI app
+marimo run notebook.py --host 0.0.0.0 --port $PORT
+```
+
+```bash Heroku
+# Procfile
+web: marimo run notebook.py --host 0.0.0.0 --port $PORT --headless
+
+# Deploy
+git push heroku main
+```
+
+```bash Google Cloud Run
+# Dockerfile
+FROM python:3.11
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD marimo run app.py --host 0.0.0.0 --port $PORT --headless
+
+# Deploy
+gcloud run deploy marimo-app --source .
+```
+
+```bash AWS Lambda
+# Use marimo with Mangum for Lambda
+from mangum import Mangum
+import marimo
+
+server = marimo.create_asgi_app().with_app(
+    path="/", root="notebook.py"
+).build()
+
+handler = Mangum(server)
+```
+
+</CodeGroup>
+
+### marimo Cloud
+
+Deploy notebooks with one command:
+
+```bash
+# Deploy to marimo cloud
+marimo cloud deploy notebook.py
+
+# Share with team
+marimo cloud share notebook.py --team my-team
+```
+
+## Development Tools
+
+### Git Integration
+
+marimo notebooks are pure Python files with excellent git support:
+
+```bash
+# Notebooks are readable diffs
+git diff notebook.py
+
+# Merge conflicts are standard Python
+git merge feature-branch
+
+# Use .gitattributes for better diffs
+*.py diff=python
+```
+
+### Pre-commit Hooks
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/marimo-team/marimo
+    rev: v0.15.0
+    hooks:
+      - id: marimo-format
+        args: [--check]
+      
+      - id: marimo-test
+        args: [--quiet]
+```
+
+### CI/CD Pipelines
+
+```yaml
+# .github/workflows/test-notebooks.yml
+name: Test Notebooks
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install marimo
+        run: pip install marimo pytest
+      
+      - name: Test notebooks
+        run: |
+          marimo test notebooks/*.py
+          pytest notebooks/
+      
+      - name: Export notebooks
+        run: |
+          marimo export html notebooks/*.py --output dist/
+```
+
+## IDE Plugins
+
+Beyond VS Code, marimo works with:
+
+- **PyCharm**: Edit as Python files with full IDE support
+- **Jupyter Lab**: Convert between formats with `marimo export ipynb`
+- **Cursor**: AI-powered editing with marimo notebooks
+- **Zed**: Fast, native editor with watch mode
+
+## Example Integration Workflows
+
+### Data Pipeline with FastAPI
+
+```python
+# pipeline.py - marimo notebook
+import marimo as mo
+import polars as pl
+
+app = mo.App()
+
+@app.cell
+def load_data():
+    return pl.read_csv("data.csv")
+
+@app.cell
+def transform(data):
+    return data.filter(pl.col("value") > 0)
+
+@app.cell
+def visualize(transformed):
+    return mo.ui.plotly(create_chart(transformed))
+```
+
+```python
+# main.py - FastAPI app
+from fastapi import FastAPI
+import marimo
+
+app = FastAPI()
+marimo_server = marimo.create_asgi_app().with_app(
+    path="/", root="pipeline.py"
+).build()
+
+app.mount("/pipeline", marimo_server)
+```
+
+### ML Monitoring Dashboard
+
+```python
+import marimo as mo
+import mlflow
+
+app = mo.App()
+
+@app.cell
+def connect_mlflow():
+    mlflow.set_tracking_uri("http://mlflow-server:5000")
+    client = mlflow.tracking.MlflowClient()
+    return client,
+
+@app.cell  
+def show_experiments(client):
+    experiments = client.search_experiments()
+    return mo.ui.table(experiments)
+
+@app.cell
+def plot_metrics(client, selected_experiment):
+    runs = client.search_runs(selected_experiment.experiment_id)
+    metrics = extract_metrics(runs)
+    return mo.ui.plotly(plot_training_curves(metrics))
+```
+
+## Related Resources
+
+- [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=marimo-team.vscode-marimo) - Official VS Code integration
+- [FastAPI Documentation](https://fastapi.tiangolo.com/) - Building APIs with FastAPI
+- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
+- [marimo Examples](https://github.com/marimo-team/marimo/tree/main/examples) - Integration examples

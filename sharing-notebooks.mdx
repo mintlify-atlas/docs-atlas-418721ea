@@ -1,0 +1,429 @@
+---
+title: Sharing Notebooks
+description: Export, deploy, and share marimo notebooks in various formats
+---
+
+marimo makes it easy to share your work - export to static formats, deploy as web apps, or collaborate via version control.
+
+## Export Formats
+
+marimo can export notebooks to multiple formats:
+
+| Format | Use Case | Command |
+|--------|----------|----------|
+| **HTML** | Static web page with outputs | `marimo export html` |
+| **WASM HTML** | Interactive, runs in browser | `marimo export html-wasm` |
+| **PDF** | Printable reports | `marimo export pdf` |
+| **Script** | Executable Python script | `marimo export script` |
+| **Markdown** | Documentation | `marimo export md` |
+| **Jupyter** | `.ipynb` format | `marimo export ipynb` |
+
+## Exporting to HTML
+
+Create standalone HTML files with embedded outputs.
+
+### Basic Export
+
+```bash
+marimo export html notebook.py -o notebook.html
+```
+
+The exported HTML includes:
+- All cell outputs (plots, tables, text)
+- Optional source code
+- Styling and formatting
+
+### Options
+
+<CodeGroup>
+```bash Include code
+marimo export html notebook.py -o output.html --include-code
+```
+
+```bash Exclude code (outputs only)
+marimo export html notebook.py -o output.html --no-include-code
+```
+
+```bash Watch mode (auto-regenerate)
+marimo export html notebook.py -o output.html --watch
+```
+
+```bash Force overwrite
+marimo export html notebook.py -o output.html --force
+```
+</CodeGroup>
+
+### Passing Arguments
+
+Export with custom CLI arguments:
+
+```bash
+marimo export html dashboard.py -o dashboard.html -- --date 2024-03-15 --region west
+```
+
+## WebAssembly (WASM) Export
+
+Export fully interactive notebooks that run entirely in the browser using Pyodide.
+
+### Basic WASM Export
+
+```bash
+# Read-only mode (default)
+marimo export html-wasm notebook.py -o output.html --mode run
+
+# Editable mode
+marimo export html-wasm notebook.py -o output.html --mode edit
+```
+
+### Features
+
+<AccordionGroup>
+  <Accordion title="Complete Self-Contained">
+    The exported HTML includes:
+    - Python runtime (via Pyodide)
+    - All notebook code
+    - Required assets
+    - No server needed!
+  </Accordion>
+
+  <Accordion title="Show/Hide Code">
+    ```bash
+    # Show code by default
+    marimo export html-wasm notebook.py -o app.html --show-code
+
+    # Hide code by default (users can toggle)
+    marimo export html-wasm notebook.py -o app.html --no-show-code
+    ```
+  </Accordion>
+
+  <Accordion title="Cloudflare Workers">
+    Generate Cloudflare Worker config for easy deployment:
+
+    ```bash
+    marimo export html-wasm notebook.py -o dist/index.html --include-cloudflare
+    ```
+
+    Creates `index.js` and `wrangler.jsonc` for deployment.
+  </Accordion>
+</AccordionGroup>
+
+### Serving WASM Files
+
+<Warning>
+WASM exports must be served via HTTP, not opened directly (`file://` won't work).
+</Warning>
+
+```bash
+# Simple HTTP server
+python -m http.server --directory output_dir
+
+# Then open http://localhost:8000
+```
+
+### Package Compatibility
+
+<Note>
+Pyodide supports most pure-Python packages. Some packages with C extensions may not work. Check the [Pyodide package list](https://pyodide.org/en/stable/usage/packages-in-pyodide.html).
+</Note>
+
+## Exporting to PDF
+
+Create printable PDF reports from your notebooks.
+
+### Basic PDF Export
+
+```bash
+marimo export pdf notebook.py -o report.pdf
+```
+
+### Options
+
+<CodeGroup>
+```bash Include outputs and code
+marimo export pdf notebook.py -o report.pdf --include-outputs --include-inputs
+```
+
+```bash Outputs only (no code)
+marimo export pdf notebook.py -o report.pdf --include-outputs --no-include-inputs
+```
+
+```bash Slide format
+marimo export pdf notebook.py -o slides.pdf --as=slides
+```
+
+```bash Watch mode
+marimo export pdf notebook.py -o report.pdf --watch
+```
+</CodeGroup>
+
+### Advanced Configuration
+
+<Accordion title="Rasterization Options">
+  For better rendering of interactive widgets:
+
+  ```bash
+  # Custom scale for screenshots
+  marimo export pdf notebook.py -o report.pdf --raster-scale 2.0
+
+  # Use live server for rasterization (better for slides)
+  marimo export pdf notebook.py -o slides.pdf --as=slides --raster-server=live
+  ```
+</Accordion>
+
+<Accordion title="Export Method">
+  ```bash
+  # Use WebPDF (Chromium-based, default)
+  marimo export pdf notebook.py -o report.pdf --webpdf
+
+  # Try standard PDF first, fallback to WebPDF
+  marimo export pdf notebook.py -o report.pdf --no-webpdf
+  ```
+</Accordion>
+
+<Note>
+PDF export requires `nbformat` and `nbconvert` packages:
+
+```bash
+pip install nbformat nbconvert[webpdf]
+```
+</Note>
+
+## Export to Script
+
+Convert to a flat Python script in topological order.
+
+```bash
+marimo export script notebook.py -o script.py
+```
+
+The exported script:
+- Executes cells in dependency order
+- Removes marimo-specific decorators
+- Can be run as a standard Python script
+
+```bash
+python script.py
+```
+
+## Export to Markdown
+
+Export as markdown with code fences:
+
+```bash
+marimo export md notebook.py -o documentation.md
+```
+
+Generated markdown:
+
+```markdown
+# My Analysis
+
+```python
+import pandas as pd
+df = pd.read_csv("data.csv")
+```
+
+```python
+result = df.groupby("category").mean()
+print(result)
+```
+```
+
+## Export to Jupyter
+
+Convert marimo notebooks to `.ipynb` format:
+
+```bash
+# Without outputs
+marimo export ipynb notebook.py -o notebook.ipynb
+
+# With outputs (runs the notebook)
+marimo export ipynb notebook.py -o notebook.ipynb --include-outputs
+
+# Custom cell order
+marimo export ipynb notebook.py -o notebook.ipynb --sort top-down
+```
+
+<Note>
+Requires `nbformat`:
+
+```bash
+pip install nbformat
+```
+</Note>
+
+## Deploying as Web Apps
+
+### Running on a Server
+
+Deploy marimo notebooks as web applications:
+
+```bash
+# Bind to all interfaces
+marimo run notebook.py --host 0.0.0.0 --port 8080
+
+# With authentication
+marimo run notebook.py --host 0.0.0.0 --token-password secret123
+
+# Behind a reverse proxy
+marimo run notebook.py --host 127.0.0.1 --proxy https://myapp.com
+```
+
+### Docker Deployment
+
+Example `Dockerfile`:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY notebook.py .
+
+EXPOSE 8080
+
+CMD ["marimo", "run", "notebook.py", "--host", "0.0.0.0", "--port", "8080", "--headless"]
+```
+
+Build and run:
+
+```bash
+docker build -t my-marimo-app .
+docker run -p 8080:8080 my-marimo-app
+```
+
+### Cloud Platforms
+
+<CardGroup cols={2}>
+  <Card title="Deploy to Cloudflare" icon="cloud">
+    Use WASM export with `--include-cloudflare` flag, then:
+
+    ```bash
+    cd output_dir
+    wrangler deploy
+    ```
+  </Card>
+
+  <Card title="Deploy to Heroku" icon="server">
+    Create `Procfile`:
+
+    ```
+    web: marimo run notebook.py --host 0.0.0.0 --port $PORT --headless
+    ```
+  </Card>
+</CardGroup>
+
+## Version Control
+
+marimo notebooks are pure Python files, making them ideal for Git.
+
+### Best Practices
+
+<Steps>
+  <Step title="Track .py files">
+    Commit your notebook `.py` files directly:
+
+    ```bash
+    git add notebook.py
+    git commit -m "Add data analysis notebook"
+    ```
+  </Step>
+
+  <Step title="Readable diffs">
+    Since notebooks are Python code, diffs are human-readable:
+
+    ```diff
+    @app.cell
+    def __(df):
+    -   result = df.mean()
+    +   result = df.median()
+        return (result,)
+    ```
+  </Step>
+
+  <Step title="Ignore outputs">
+    No need to track outputs - they're generated at runtime:
+
+    ```gitignore .gitignore
+    # No .ipynb_checkpoints needed!
+    __pycache__/
+    .marimo.cache/
+    ```
+  </Step>
+</Steps>
+
+### Collaboration
+
+Workflow for teams:
+
+1. **Create a branch** for your analysis
+2. **Edit the notebook** with `marimo edit`
+3. **Commit changes** to the `.py` file
+4. **Create pull request** with readable diffs
+5. **Review code** like any Python file
+6. **Merge** when approved
+
+<Tip>
+marimo's reactive execution ensures notebooks always run top-to-bottom, eliminating hidden state issues common in Jupyter.
+</Tip>
+
+## Sharing on GitHub
+
+### README Examples
+
+Reference notebooks in your README:
+
+```markdown README.md
+# My Project
+
+Explore the analysis:
+
+```bash
+marimo edit analysis.ipynb
+```
+
+Or run as a dashboard:
+
+```bash
+marimo run dashboard.py
+```
+```
+
+### GitHub Actions
+
+Automate notebook exports:
+
+```yaml .github/workflows/export.yml
+name: Export Notebooks
+
+on: [push]
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install marimo nbformat nbconvert
+      - run: marimo export html notebook.py -o output.html
+      - uses: actions/upload-artifact@v3
+        with:
+          name: exported-html
+          path: output.html
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Converting from Jupyter" icon="exchange" href="/converting-jupyter">
+    Migrate existing `.ipynb` notebooks
+  </Card>
+  <Card title="Package Management" icon="package" href="/package-management">
+    Manage dependencies with PEP 723
+  </Card>
+</CardGroup>

@@ -1,0 +1,271 @@
+---
+title: Code Completion
+description: Learn about marimo's intelligent code completion features including AI-powered completions, GitHub Copilot, and Jedi integration.
+---
+
+marimo provides sophisticated code completion capabilities to help you write code faster and with fewer errors. The editor combines traditional code completion with AI-powered suggestions to provide an intelligent coding experience.
+
+## Completion Features
+
+marimo's completion engine integrates multiple sources to provide comprehensive suggestions:
+
+- **Jedi**: Fast, accurate Python code completion for standard library and third-party packages
+- **Variable completion**: Context-aware completion of variables defined in your notebook
+- **AI-powered completion**: Inline suggestions using GitHub Copilot, Codeium, or custom models
+- **Language Server Protocol (LSP)**: Enhanced completions from pylsp and other language servers
+
+### Basic Code Completion
+
+Code completion activates automatically as you type, suggesting:
+
+- Variable names from your notebook cells
+- Module and package names
+- Function and method names
+- Class attributes and methods
+- Keywords and built-in functions
+
+<Tip>
+**Press `Tab` or `Ctrl/Cmd+Space`** to manually trigger completions at any time.
+</Tip>
+
+### Signature Hints
+
+When calling functions, marimo displays signature hints showing parameter names, types, and default values. This helps you understand function APIs without leaving your code.
+
+<Accordion title="Configure signature hints">
+
+You can control when signature hints appear:
+
+```toml title="marimo.toml"
+[completion]
+activate_on_typing = true           # Auto-show completions while typing
+signature_hint_on_typing = false    # Only show hints on manual trigger
+```
+
+Or configure through the editor settings menu.
+
+</Accordion>
+
+## AI-Powered Completions
+
+marimo supports AI copilots that provide intelligent, context-aware code suggestions as you type, similar to GitHub Copilot in VS Code.
+
+### GitHub Copilot
+
+The marimo editor natively supports [GitHub Copilot](https://copilot.github.com/), an AI pair programmer that suggests entire lines or blocks of code.
+
+**Setup:**
+
+1. Install [Node.js](https://nodejs.org/en/download) (required for the Copilot language server)
+2. Enable Copilot via the settings menu in the marimo editor
+3. Authenticate with your GitHub account when prompted
+
+<div align="center">
+<img src="/_static/docs-ai-completion-gh.png" width="740px"/>
+</div>
+
+<Note>
+GitHub Copilot is not yet available in the conda distribution. Please install marimo using `pip` or `uv` if you need Copilot support.
+</Note>
+
+**Advanced Configuration:**
+
+Customize GitHub Copilot behavior in your `marimo.toml`:
+
+```toml title="marimo.toml"
+[completion]
+copilot = "github"
+
+[ai.github.copilot_settings.http]
+proxy = "http://proxy.example.com:8888"
+proxyStrictSSL = true
+
+[ai.github.copilot_settings.github-enterprise]
+uri = "https://github.enterprise.com"  # For GitHub Enterprise users
+```
+
+Available settings:
+- **HTTP settings**: Configure proxy for network connections
+- **Telemetry**: Control telemetry data collection (`"off"`, `"crash"`, `"error"`, or `"all"`)
+- **GitHub Enterprise**: Configure your enterprise server URL
+
+See the [AI completion guide](guides/editor_features/ai_completion.md#github-copilot) for more details.
+
+### Codeium (Windsurf)
+
+[Windsurf](https://windsurf.com/) (formerly Codeium) provides fast, free AI-powered code completions.
+
+**Setup:**
+
+1. Sign up at [windsurf.com](https://windsurf.com/)
+2. Download and install the Windsurf app
+3. Copy your API key from the Windsurf app (Cmd/Ctrl+Shift+P → "Copy API Key")
+4. Configure in marimo settings or add to your config:
+
+```toml title="marimo.toml"
+[completion]
+copilot = "codeium"
+codeium_api_key = "your-api-key-here"
+```
+
+### Custom Copilot Models
+
+You can integrate custom LLM providers for code completion, allowing you to use internal providers, local models (e.g., Ollama), or any OpenAI-compatible service.
+
+```toml title="marimo.toml"
+[ai.models]
+autocomplete_model = "provider/model-name"  # e.g., "ollama/codellama"
+
+[completion]
+copilot = "custom"
+```
+
+This enables inline code suggestions using:
+- Local models via Ollama
+- Internal company LLM services
+- OpenAI, Anthropic, Google with your own API keys
+- Any OpenAI-compatible provider
+
+See the [LLM providers guide](guides/configuration/llm_providers.md) for provider-specific configuration.
+
+## Language Server Integration
+
+marimo integrates with Python language servers to enhance code completion with type information, documentation, and more intelligent suggestions.
+
+### Python LSP Server (pylsp)
+
+The Python Language Server Protocol implementation provides:
+- Context-aware completions
+- Type-based suggestions
+- Documentation on hover
+- Code actions and quick fixes
+
+**Install:**
+
+```bash
+pip install "marimo[lsp]"
+# or
+uv add "marimo[lsp]"
+```
+
+**Enable in configuration:**
+
+```toml title="pyproject.toml"
+[tool.marimo.language_servers.pylsp]
+enabled = true
+```
+
+See the [Language Server guide](guides/editor_features/language_server.md) for complete LSP documentation.
+
+## Completion Configuration
+
+### Configuration File
+
+Edit your `marimo.toml` to customize completion behavior:
+
+```toml title="marimo.toml"
+[completion]
+activate_on_typing = true           # Show completions while typing
+signature_hint_on_typing = false    # Only show signature on manual trigger
+copilot = "github"                  # Options: false, "github", "codeium", "custom"
+```
+
+### Via Settings Menu
+
+Access completion settings through:
+1. Open settings (⚙️ icon in top-right)
+2. Navigate to "Completion" tab
+3. Adjust settings visually
+
+<Note>
+Settings configured in `pyproject.toml` or script metadata take precedence over user configuration and cannot be changed through the UI.
+</Note>
+
+## Completion Shortcuts
+
+Key bindings for completion:
+
+| Action | Default Shortcut |
+|--------|------------------|
+| Trigger completion | `Tab` or `Ctrl/Cmd+Space` |
+| Accept suggestion | `Tab` or `Enter` |
+| Next suggestion | `↓` or `Ctrl+n` |
+| Previous suggestion | `↑` or `Ctrl+p` |
+| Dismiss | `Esc` |
+
+Customize these shortcuts in the [hotkeys settings](guides/editor_features/hotkeys.md).
+
+## Best Practices
+
+<Accordion title="Write descriptive variable names">
+Descriptive names help the completion engine provide better suggestions and make your code more maintainable.
+
+```python
+# Good - clear, descriptive names
+user_dataframe = load_user_data()
+filtered_users = user_dataframe[user_dataframe['age'] > 18]
+
+# Less helpful for completion
+df = load_data()
+df2 = df[df['age'] > 18]
+```
+</Accordion>
+
+<Accordion title="Leverage type hints">
+Type annotations improve completion accuracy, especially with LSP enabled:
+
+```python
+from typing import List
+
+def process_data(items: List[dict]) -> pd.DataFrame:
+    # Completions will know 'items' is a list of dicts
+    return pd.DataFrame(items)
+```
+</Accordion>
+
+<Accordion title="Use imports at the cell level">
+Import packages in cells where you use them for better completion context:
+
+```python
+import pandas as pd
+import numpy as np
+
+# Completions will work better here
+df = pd.DataFrame(np.random.randn(10, 3))
+```
+</Accordion>
+
+## Troubleshooting
+
+<Accordion title="Completions not appearing">
+
+1. Check that `activate_on_typing` is enabled in settings
+2. Try manually triggering with `Ctrl/Cmd+Space`
+3. Verify Jedi is installed: `pip list | grep jedi`
+4. Restart the marimo server
+
+</Accordion>
+
+<Accordion title="GitHub Copilot not working">
+
+1. Ensure Node.js is installed: `node --version`
+2. Check authentication status in settings
+3. Verify network connectivity (Copilot requires internet)
+4. Check logs in `~/.cache/marimo/logs/` for errors
+
+</Accordion>
+
+<Accordion title="Slow completions">
+
+1. Disable LSP if not needed: Set `enabled = false` for language servers
+2. Reduce signature hints: Set `signature_hint_on_typing = false`
+3. Check for large imported modules that may slow analysis
+
+</Accordion>
+
+## Related Documentation
+
+- [AI-Assisted Coding](guides/editor_features/ai_completion.md) - Full-cell AI generation and refactoring
+- [Language Server Protocol](guides/editor_features/language_server.md) - Enhanced code intelligence
+- [Keyboard Shortcuts](keyboard-shortcuts.mdx) - Completion keybindings
+- [Configuration](configuration.mdx) - Detailed configuration options

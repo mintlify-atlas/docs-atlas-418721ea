@@ -1,0 +1,57 @@
+---
+title: tabs
+---
+
+<Warning>
+  `mo.tabs` is deprecated. Use `mo.ui.tabs` instead.
+</Warning>
+
+Tabs of UI elements.
+
+## Usage
+
+```python
+tab1 = mo.vstack([mo.ui.slider(1, 10), mo.ui.text(), mo.ui.date()])
+tab2 = mo.vstack(
+    [
+        {
+            "slider": mo.ui.slider(1, 10),
+            "text": mo.ui.text(),
+            "date": mo.ui.date(),
+        }
+    ]
+)
+tabs = mo.tabs({"Tab 1": tab1, "Tab 2": tab2})
+```
+
+## Signature
+
+```python
+mo.tabs(
+    tabs: dict[str, object]
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="tabs" type="dict[str, object]" required>
+  A dictionary of tab names to tab content; strings are interpreted as markdown.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An `Html` object.
+</ParamField>
+
+## Migration
+
+To migrate to `mo.ui.tabs`, use the following pattern:
+
+```python
+# Old (deprecated)
+mo.tabs({"Tab 1": content1, "Tab 2": content2})
+
+# New
+mo.ui.tabs({"Tab 1": content1, "Tab 2": content2})
+```

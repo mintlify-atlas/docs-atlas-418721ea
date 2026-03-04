@@ -1,0 +1,110 @@
+---
+title: 'DataFrame'
+description: 'Interactive dataframe viewer with transformations'
+---
+
+# mo.ui.dataframe
+
+Display and interact with dataframes from pandas, polars, pyarrow, and more.
+
+## Signature
+
+```python
+mo.ui.dataframe(
+    df: DataFrameType,
+    on_change: Callable[[DataFrameType], None] | None = None,
+    page_size: int = 5,
+    limit: int | None = None,
+    show_download: bool = True,
+    *,
+    format_mapping: dict | None = None,
+    download_csv_encoding: str | None = None,
+    download_csv_separator: str | None = None,
+    download_json_ensure_ascii: bool = True,
+    lazy: bool | None = None
+)
+```
+
+## Parameters
+
+<ParamField path="df" type="DataFrame" required>
+  Pandas, Polars, PyArrow, or Ibis dataframe
+</ParamField>
+
+<ParamField path="on_change" type="Callable">
+  Callback when dataframe is transformed
+</ParamField>
+
+<ParamField path="page_size" type="int" default="5">
+  Rows per page
+</ParamField>
+
+<ParamField path="limit" type="int">
+  Maximum rows to display
+</ParamField>
+
+<ParamField path="show_download" type="bool" default="True">
+  Show download button
+</ParamField>
+
+<ParamField path="format_mapping" type="dict">
+  Custom column formatters
+</ParamField>
+
+<ParamField path="lazy" type="bool">
+  Use lazy evaluation for large dataframes
+</ParamField>
+
+## Features
+
+- **Filter**: Filter rows by column values
+- **Sort**: Sort by one or more columns
+- **Search**: Full-text search across all columns
+- **Select columns**: Choose which columns to display
+- **Aggregate**: Group by and aggregate data
+- **Download**: Export as CSV, JSON, or Parquet
+- **Code generation**: Generate Python code for transformations
+
+## Examples
+
+```python
+import marimo as mo
+import pandas as pd
+
+# Basic dataframe
+df = pd.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [30, 25, 35],
+    "salary": [70000, 50000, 90000]
+})
+
+df_viewer = mo.ui.dataframe(df)
+df_viewer
+```
+
+```python
+# Access transformed dataframe
+transformed = df_viewer.value
+mo.md(f"Rows: {len(transformed)}")
+```
+
+```python
+# With custom formatting
+from datetime import date
+
+df = pd.DataFrame({
+    "date": [date(2024, 1, 1), date(2024, 1, 2)],
+    "value": [1234.56, 7890.12]
+})
+
+df_viewer = mo.ui.dataframe(
+    df,
+    format_mapping={
+        "value": "${:,.2f}"
+    }
+)
+```
+
+<Tip>
+For very large dataframes, set `lazy=True` to use lazy evaluation and improve performance.
+</Tip>

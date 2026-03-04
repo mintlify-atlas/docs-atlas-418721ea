@@ -1,0 +1,724 @@
+---
+title: "Deployment Platforms"
+description: "Deploy marimo notebooks to cloud platforms, containers, and production environments"
+---
+
+# Deployment Platforms
+
+Deploy marimo notebooks to production environments using cloud platforms, Docker containers, Kubernetes, and more. This guide covers best practices for production deployments across various platforms.
+
+## Docker Deployment
+
+### Official Docker Images
+
+marimo provides official Docker images for quick deployment:
+
+<CodeGroup>
+```dockerfile Slim (Base Image)
+FROM ghcr.io/marimo-team/marimo:latest
+
+# Copy your notebooks
+COPY notebooks/ /app/notebooks/
+
+WORKDIR /app
+EXPOSE 8080
+
+CMD ["marimo", "run", "notebooks/app.py", "--host", "0.0.0.0", "--port", "8080", "--headless"]
+```
+
+```dockerfile Data Science Stack
+FROM ghcr.io/marimo-team/marimo:latest-data
+
+# Includes: pandas, numpy, altair, marimo[recommended,lsp]
+COPY app.py /app/
+WORKDIR /app
+
+CMD ["marimo", "run", "app.py", "--host", "0.0.0.0", "--port", "8080"]
+```
+
+```dockerfile SQL Support
+FROM ghcr.io/marimo-team/marimo:latest-sql
+
+# Includes data science stack + marimo[sql]
+COPY notebooks/ /app/
+WORKDIR /app
+
+CMD ["marimo", "run", "notebooks/", "--host", "0.0.0.0", "--port", "8080"]
+```
+</CodeGroup>
+
+### Custom Dockerfile
+
+Build a custom image with your dependencies:
+
+```dockerfile
+FROM python:3.11-slim
+
+# Install system dependencies if needed
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast package installation
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN uv pip install --system --no-cache -r requirements.txt
+
+# Copy application
+COPY . .
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Run application
+CMD ["marimo", "run", "app.py", \
+     "--host", "0.0.0.0", \
+     "--port", "8080", \
+     "--headless", \
+     "--no-token"]
+```
+
+### Docker Compose
+
+Orchestrate multi-container deployments:
+
+```yaml
+version: '3.8'
+
+services:
+  marimo:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - MARIMO_SKIP_UPDATE_CHECK=1
+      - DATABASE_URL=postgresql://postgres:password@db:5432/mydb
+    volumes:
+      - ./data:/app/data
+      - ./notebooks:/app/notebooks
+    depends_on:
+      - db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
+
+Run with:
+
+```bash
+docker-compose up -d
+```
+
+## Cloud Platform Deployment
+
+### Railway
+
+Deploy to Railway with one click:
+
+<Steps>
+  <Step title="Create railway.toml">
+    ```toml
+    [build]
+    builder = "nixpacks"
+    
+    [deploy]
+    startCommand = "marimo run app.py --host 0.0.0.0 --port $PORT --headless --no-token"
+    healthcheckPath = "/health"
+    healthcheckTimeout = 100
+    restartPolicyType = "on_failure"
+    ```
+  </Step>
+  
+  <Step title="Add requirements.txt">
+    ```txt
+    marimo>=0.12.0
+    pandas
+    altair
+    ```
+  </Step>
+  
+  <Step title="Deploy">
+    Connect your GitHub repo to Railway and deploy automatically on push.
+  </Step>
+</Steps>
+
+See the [Railway deployment guide](/guides/deploying/deploying_railway) for details.
+
+### Hugging Face Spaces
+
+Deploy as a Hugging Face Space:
+
+<Steps>
+  <Step title="Create README.md">
+    ```yaml
+    ---
+    title: My marimo App
+    emoji: 📊
+    colorFrom: blue
+    colorTo: purple
+    sdk: docker
+    app_port: 8080
+    ---
+    ```
+  </Step>
+  
+  <Step title="Create Dockerfile">
+    ```dockerfile
+    FROM ghcr.io/marimo-team/marimo:latest
+    
+    COPY app.py /app/
+    WORKDIR /app
+    
+    EXPOSE 8080
+    CMD ["marimo", "run", "app.py", "--host", "0.0.0.0", "--port", "8080", "--headless", "--no-token"]
+    ```
+  </Step>
+  
+  <Step title="Push to Hugging Face">
+    Upload files to a new Space and it will build automatically.
+  </Step>
+</Steps>
+
+See the [Hugging Face guide](/guides/deploying/deploying_hugging_face).
+
+### Google Cloud Run
+
+Deploy serverless on Google Cloud:
+
+```bash
+# Build and push container
+gcloud builds submit --tag gcr.io/PROJECT_ID/marimo-app
+
+# Deploy to Cloud Run
+gcloud run deploy marimo-app \
+  --image gcr.io/PROJECT_ID/marimo-app \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --memory 2Gi \
+  --cpu 2 \
+  --timeout 3600 \
+  --set-env-vars MARIMO_SKIP_UPDATE_CHECK=1
+```
+
+### AWS ECS/Fargate
+
+Deploy on AWS Elastic Container Service:
+
+```json
+{
+  "family": "marimo-app",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "containerDefinitions": [
+    {
+      "name": "marimo",
+      "image": "YOUR_ECR_REPO/marimo-app:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "MARIMO_SKIP_UPDATE_CHECK",
+          "value": "1"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3
+      }
+    }
+  ]
+}
+```
+
+### Azure Container Instances
+
+```bash
+az container create \
+  --resource-group myResourceGroup \
+  --name marimo-app \
+  --image myregistry.azurecr.io/marimo-app:latest \
+  --cpu 2 \
+  --memory 4 \
+  --registry-login-server myregistry.azurecr.io \
+  --registry-username $USERNAME \
+  --registry-password $PASSWORD \
+  --dns-name-label marimo-app \
+  --ports 8080 \
+  --environment-variables MARIMO_SKIP_UPDATE_CHECK=1
+```
+
+## Kubernetes Deployment
+
+### Basic Deployment
+
+Deploy to Kubernetes cluster:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marimo-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: marimo
+  template:
+    metadata:
+      labels:
+        app: marimo
+    spec:
+      containers:
+      - name: marimo
+        image: your-registry/marimo-app:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MARIMO_SKIP_UPDATE_CHECK
+          value: "1"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: marimo-secrets
+              key: database-url
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marimo-service
+spec:
+  selector:
+    app: marimo
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer
+```
+
+See the [Kubernetes guide](/guides/deploying/deploying_kubernetes) for more details.
+
+## HPC and Research Computing
+
+### Slurm Clusters
+
+Deploy on HPC clusters with Slurm:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=marimo-app
+#SBATCH --output=marimo_%j.log
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
+#SBATCH --time=24:00:00
+
+# Load modules
+module load python/3.11
+
+# Activate environment
+source venv/bin/activate
+
+# Get compute node hostname
+HOSTNAME=$(hostname)
+PORT=8080
+
+echo "marimo running on $HOSTNAME:$PORT"
+echo "SSH tunnel: ssh -L $PORT:$HOSTNAME:$PORT $USER@login.cluster.edu"
+
+# Run marimo
+marimo run app.py --host 0.0.0.0 --port $PORT --headless
+```
+
+See the [Slurm deployment guide](/guides/deploying/deploying_slurm).
+
+### SkyPilot
+
+Deploy to any cloud with SkyPilot:
+
+```yaml
+resources:
+  cloud: aws
+  instance_type: t3.medium
+  disk_size: 50
+
+setup: |
+  pip install marimo pandas altair
+
+run: |
+  marimo run app.py --host 0.0.0.0 --port 8080 --headless --no-token
+```
+
+Launch:
+
+```bash
+sky launch marimo.yaml --cloud aws
+```
+
+See the [SkyPilot guide](/guides/deploying/deploying_skypilot).
+
+## Reverse Proxy Configuration
+
+### Nginx
+
+Configure nginx as reverse proxy:
+
+```nginx
+upstream marimo {
+    server 127.0.0.1:8080;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+    
+    # Redirect to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name example.com;
+    
+    ssl_certificate /etc/ssl/certs/example.com.crt;
+    ssl_certificate_key /etc/ssl/private/example.com.key;
+    
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    
+    location / {
+        proxy_pass http://marimo;
+        proxy_http_version 1.1;
+        
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Timeouts for long-running requests
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+}
+```
+
+See the [nginx guide](/guides/deploying/deploying_nginx) for more examples.
+
+### Caddy
+
+Use Caddy for automatic HTTPS:
+
+```caddy
+example.com {
+    reverse_proxy localhost:8080 {
+        # WebSocket support is automatic
+        
+        # Timeouts
+        transport http {
+            read_timeout 1h
+            write_timeout 1h
+        }
+    }
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000;"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+    }
+}
+```
+
+Run:
+
+```bash
+caddy run
+```
+
+## Environment Configuration
+
+### Environment Variables
+
+Configure marimo with environment variables:
+
+```bash
+# Disable update checks
+export MARIMO_SKIP_UPDATE_CHECK=1
+
+# Set output mode for scripts
+export MARIMO_OUTPUT_MODE=quiet
+
+# Configure logging
+export MARIMO_LOG_LEVEL=INFO
+
+# Run in secure environment (disables some features)
+export MARIMO_IN_SECURE_ENVIRONMENT=true
+
+# Custom paths
+export MARIMO_CACHE_DIR=/var/cache/marimo
+export MARIMO_CONFIG_DIR=/etc/marimo
+```
+
+### Secrets Management
+
+<CodeGroup>
+```bash Kubernetes Secrets
+kubectl create secret generic marimo-secrets \
+  --from-literal=database-url=$DATABASE_URL \
+  --from-literal=api-key=$API_KEY
+```
+
+```bash Docker Secrets
+echo $DATABASE_URL | docker secret create db_url -
+docker service create \
+  --secret db_url \
+  --env DATABASE_URL_FILE=/run/secrets/db_url \
+  marimo-app
+```
+
+```bash AWS Secrets Manager
+aws secretsmanager create-secret \
+  --name marimo-app/database-url \
+  --secret-string $DATABASE_URL
+```
+</CodeGroup>
+
+<Warning>
+Never commit secrets to version control. Use environment variables, secret managers, or mount secrets as files.
+</Warning>
+
+## Production Best Practices
+
+### Security
+
+<Steps>
+  <Step title="Use authentication">
+    Enable token authentication or implement custom auth middleware:
+    ```bash
+    marimo run app.py --token-password-file /run/secrets/password
+    ```
+  </Step>
+  
+  <Step title="Run as non-root user">
+    Create and use a dedicated user in Docker:
+    ```dockerfile
+    RUN useradd -m -u 1000 appuser
+    USER appuser
+    ```
+  </Step>
+  
+  <Step title="Enable HTTPS">
+    Use TLS/SSL certificates via reverse proxy (nginx, Caddy).
+  </Step>
+  
+  <Step title="Configure CORS">
+    Restrict allowed origins:
+    ```bash
+    marimo run app.py --allow-origins https://trusted-domain.com
+    ```
+  </Step>
+  
+  <Step title="Use security headers">
+    Add via reverse proxy: HSTS, X-Frame-Options, CSP, etc.
+  </Step>
+</Steps>
+
+### Performance
+
+<Tip>
+**Optimize production deployments:**
+
+1. **Resource limits**: Set appropriate CPU/memory limits
+2. **Session TTL**: Configure based on expected usage:
+   ```bash
+   marimo run app.py --session-ttl 300  # 5 minutes
+   ```
+3. **Connection pooling**: For database-backed apps
+4. **Caching**: Use Redis/Memcached for shared state
+5. **Load balancing**: Run multiple replicas behind load balancer
+6. **Health checks**: Configure liveness/readiness probes
+7. **Monitoring**: Track metrics with Prometheus, Datadog, etc.
+</Tip>
+
+### Reliability
+
+```yaml
+# Kubernetes example with proper health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 2
+```
+
+### Monitoring
+
+Monitor your deployment:
+
+```python
+# Add custom metrics endpoint
+import marimo as mo
+from prometheus_client import Counter, generate_latest
+
+request_count = Counter('requests_total', 'Total requests')
+
+@app.cell
+def __():
+    # Your app logic
+    request_count.inc()
+    return
+
+# Expose metrics at /metrics
+```
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Connection refused / timeout">
+    - Check firewall rules
+    - Verify port binding (`0.0.0.0` not `127.0.0.1`)
+    - Check health endpoint: `curl http://localhost:8080/health`
+  </Accordion>
+  
+  <Accordion title="WebSocket connection failed">
+    - Configure reverse proxy for WebSocket upgrade
+    - Check timeout settings (increase for long operations)
+    - Verify SSL/TLS termination handling
+  </Accordion>
+  
+  <Accordion title="Out of memory errors">
+    - Increase container memory limits
+    - Reduce session TTL to clean up faster
+    - Profile memory usage
+    - Use more efficient data structures
+  </Accordion>
+  
+  <Accordion title="Slow response times">
+    - Check resource limits (CPU/memory)
+    - Profile application performance
+    - Add caching for expensive operations
+    - Scale horizontally with more replicas
+  </Accordion>
+</AccordionGroup>
+
+## Examples
+
+### Complete Production Setup
+
+```bash
+# Build optimized image
+docker build -t marimo-app:prod \
+  --build-arg PYTHON_VERSION=3.11 \
+  --target production .
+
+# Run with production config
+docker run -d \
+  --name marimo-prod \
+  -p 8080:8080 \
+  -e MARIMO_SKIP_UPDATE_CHECK=1 \
+  -e DATABASE_URL_FILE=/run/secrets/db_url \
+  -v $(pwd)/data:/app/data:ro \
+  --secret db_url \
+  --restart unless-stopped \
+  --memory 2g \
+  --cpus 1.5 \
+  marimo-app:prod
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deploy as App" icon="window" href="/deploy-as-app">
+    Configure app deployment options
+  </Card>
+  <Card title="Authentication" icon="shield" href="/guides/deploying/authentication">
+    Secure your deployment
+  </Card>
+  <Card title="Docker Guide" icon="docker" href="/guides/deploying/deploying_docker">
+    Detailed Docker deployment guide
+  </Card>
+  <Card title="Kubernetes" icon="server" href="/guides/deploying/deploying_kubernetes">
+    Advanced Kubernetes patterns
+  </Card>
+</CardGroup>

@@ -1,0 +1,100 @@
+---
+title: matplotlib
+---
+
+Make reactive selections on matplotlib plots.
+
+## Usage
+
+```python
+import matplotlib.pyplot as plt
+import marimo as mo
+import numpy as np
+
+x = np.arange(5)
+y = x**2
+plt.scatter(x=x, y=y)
+ax = mo.ui.matplotlib(plt.gca())
+ax
+```
+
+```python
+# Filter data using the selection
+mask = ax.value.get_mask(x, y)
+selected_x, selected_y = x[mask], y[mask]
+```
+
+```python
+# Check if anything is selected
+if ax.value:
+    print("Data has been selected")
+```
+
+## Signature
+
+```python
+mo.ui.matplotlib(
+    axes: Axes,
+    *,
+    debounce: bool = False
+)
+```
+
+## Parameters
+
+<ParamField path="axes" type="Axes" required>
+  A matplotlib `Axes` object. The full figure is rendered, but selections map to this axes' coordinate space.
+</ParamField>
+
+<ParamField path="debounce" type="bool" default="False">
+  If `True`, the selection is only sent to Python on mouse-up. If `False` (the default), it streams while dragging.
+</ParamField>
+
+## Attributes
+
+<ParamField path="value" type="MatplotlibSelection">
+  The selected data, with `get_mask(x, y)` returning a mask array corresponding to the selection.
+</ParamField>
+
+<ParamField path="axes" type="Axes">
+  The associated matplotlib Axes object.
+</ParamField>
+
+## Selection Types
+
+The figure is rendered as a static image with an interactive selection overlay:
+
+- Click and drag for box selection
+- Hold the `Shift` key and drag for lasso selection
+
+### BoxSelection
+
+A rectangular box selection on a matplotlib plot.
+
+**Attributes:**
+- `x_min`: Left boundary of the selection
+- `x_max`: Right boundary of the selection
+- `y_min`: Bottom boundary of the selection
+- `y_max`: Top boundary of the selection
+
+**Methods:**
+- `get_mask(x, y)`: Get a boolean mask for points within this selection
+
+### LassoSelection
+
+A freehand polygon (lasso) selection on a matplotlib plot.
+
+**Attributes:**
+- `vertices`: The polygon vertices as a tuple of (x, y) pairs
+
+**Methods:**
+- `get_mask(x, y)`: Get a boolean mask for points within this selection
+
+### EmptySelection
+
+Sentinel representing no selection. Returned by `mo.ui.matplotlib.value` when nothing is selected.
+
+Behaves like a selection with no points, and evaluates to `False` when coerced as a bool.
+
+**Methods:**
+- `get_mask(x, y)`: Return an all-`False` mask

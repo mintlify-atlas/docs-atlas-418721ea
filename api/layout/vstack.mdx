@@ -1,0 +1,65 @@
+---
+title: vstack
+---
+
+Stack items vertically, in a column.
+
+Combine with `hstack` to build a grid of items.
+
+## Usage
+
+```python
+# Build a column of items
+mo.vstack([mo.md("..."), mo.ui.text_area()])
+```
+
+```python
+# Build a grid
+mo.vstack(
+    [
+        mo.hstack([mo.md("..."), mo.ui.text_area()]),
+        mo.hstack([mo.ui.checkbox(), mo.ui.text(), mo.ui.date()]),
+    ]
+)
+```
+
+## Signature
+
+```python
+mo.vstack(
+    items: Sequence[object],
+    *,
+    align: Optional[Literal["start", "end", "center", "stretch"]] = None,
+    justify: Literal["start", "center", "end", "space-between", "space-around"] = "start",
+    gap: float = 0.5,
+    heights: Optional[Literal["equal"] | Sequence[float]] = None
+) -> Html
+```
+
+## Parameters
+
+<ParamField path="items" type="Sequence[object]" required>
+  A list of items.
+</ParamField>
+
+<ParamField path="align" type="Optional[Literal['start', 'end', 'center', 'stretch']]" default="None">
+  Align items horizontally: start, end, center, or stretch.
+</ParamField>
+
+<ParamField path="justify" type="Literal['start', 'center', 'end', 'space-between', 'space-around']" default="'start'">
+  Justify items vertically: start, center, end, space-between, or space-around.
+</ParamField>
+
+<ParamField path="gap" type="float" default="0.5">
+  Gap between items as a float in rem. 1rem is 16px by default.
+</ParamField>
+
+<ParamField path="heights" type="Optional[Literal['equal'] | Sequence[float]]" default="None">
+  `"equal"` to give items equal height; or a list of relative heights with same length as `items`, e.g., `[1, 2]` means the second item is twice as tall as the first; or `None` for a sensible default.
+</ParamField>
+
+## Returns
+
+<ParamField path="Html">
+  An Html object.
+</ParamField>

@@ -1,0 +1,111 @@
+---
+title: 'Chat'
+description: 'AI-powered chat interface'
+---
+
+# mo.ui.chat
+
+Create an AI-powered chat interface with conversation history.
+
+## Signature
+
+```python
+mo.ui.chat(
+    model: Callable[[list[ChatMessage], ChatModelConfig], object],
+    *,
+    prompts: list[str] | None = None,
+    on_message: Callable[[list[ChatMessage]], None] | None = None,
+    show_configuration_controls: bool = False,
+    config: ChatModelConfigDict | None = None,
+    allow_attachments: bool | list[str] = False,
+    max_height: int | None = None,
+    disabled: bool = False
+)
+```
+
+## Parameters
+
+<ParamField path="model" type="Callable" required>
+  Function that takes messages and config, returns response
+</ParamField>
+
+<ParamField path="prompts" type="list[str]">
+  Suggested prompts displayed to user
+</ParamField>
+
+<ParamField path="on_message" type="Callable">
+  Callback when new message is sent
+</ParamField>
+
+<ParamField path="show_configuration_controls" type="bool" default="False">
+  Show temperature/tokens controls
+</ParamField>
+
+<ParamField path="config" type="ChatModelConfigDict">
+  Default model configuration
+</ParamField>
+
+<ParamField path="allow_attachments" type="bool | list[str]" default="False">
+  Allow file attachments (True for all types, or list of extensions)
+</ParamField>
+
+<ParamField path="max_height" type="int">
+  Maximum height in pixels
+</ParamField>
+
+<ParamField path="disabled" type="bool" default="False">
+  Whether chat is disabled
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+from pydantic_ai import Agent
+
+# Create agent
+agent = Agent("openai:gpt-4")
+
+# Create chat interface
+chat = mo.ui.chat(
+    agent,
+    prompts=[
+        "Explain quantum computing",
+        "Write a Python function",
+    ]
+)
+chat
+```
+
+```python
+# Custom model function
+def my_model(messages, config):
+    # Process messages and return response
+    last_message = messages[-1].content
+    return f"You said: {last_message}"
+
+chat = mo.ui.chat(
+    my_model,
+    show_configuration_controls=True
+)
+```
+
+```python
+# With attachments
+chat = mo.ui.chat(
+    agent,
+    allow_attachments=[".pdf", ".txt", ".md"]
+)
+```
+
+## ChatMessage Structure
+
+Messages have:
+- `role`: "user" or "assistant"
+- `content`: Message text
+- `attachments`: List of attached files
+- `timestamp`: When message was sent
+
+<Tip>
+Use `chat.value` to access the full conversation history.
+</Tip>

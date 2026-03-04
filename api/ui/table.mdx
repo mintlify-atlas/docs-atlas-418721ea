@@ -1,0 +1,86 @@
+---
+title: 'Table'
+description: 'Display data in interactive tables'
+---
+
+# mo.ui.table
+
+Display data in an interactive, searchable table.
+
+## Signature
+
+```python
+mo.ui.table(
+    data: Sequence[dict[str, Any]] | dict[str, Sequence[Any]],
+    selection: Literal["single", "multi"] | None = None,
+    pagination: bool = True,
+    page_size: int = 10,
+    *,
+    label: str = "",
+    on_change: Callable[[list[dict[str, Any]]], None] | None = None
+)
+```
+
+## Parameters
+
+<ParamField path="data" type="Sequence[dict] | dict[str, Sequence]" required>
+  Table data as list of dicts or dict of lists
+</ParamField>
+
+<ParamField path="selection" type="'single' | 'multi'">
+  Enable row selection (single or multiple)
+</ParamField>
+
+<ParamField path="pagination" type="bool" default="True">
+  Enable pagination
+</ParamField>
+
+<ParamField path="page_size" type="int" default="10">
+  Number of rows per page
+</ParamField>
+
+<ParamField path="label" type="str" default="''">
+  Markdown label for the table
+</ParamField>
+
+## Examples
+
+```python
+import marimo as mo
+
+# Basic table
+data = [
+    {"name": "Alice", "age": 30, "city": "NYC"},
+    {"name": "Bob", "age": 25, "city": "SF"},
+    {"name": "Charlie", "age": 35, "city": "LA"},
+]
+
+table = mo.ui.table(data)
+table
+```
+
+```python
+# Table with selection
+selectable_table = mo.ui.table(
+    data,
+    selection="multi",
+    label="**Select rows:**"
+)
+
+mo.md(f"Selected: {selectable_table.value}")
+```
+
+```python
+# Column-oriented data
+data_cols = {
+    "Name": ["Alice", "Bob", "Charlie"],
+    "Age": [30, 25, 35],
+    "City": ["NYC", "SF", "LA"]
+}
+
+table = mo.ui.table(data_cols, page_size=5)
+```
+
+<Note>
+For dataframe-specific features, use `mo.ui.dataframe()` instead.
+</Note>

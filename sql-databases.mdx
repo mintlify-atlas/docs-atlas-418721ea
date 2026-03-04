@@ -1,0 +1,499 @@
+---
+title: SQL and Databases
+description: Execute SQL queries and connect to databases with marimo's SQL support
+---
+
+marimo provides built-in SQL support, allowing you to query databases and work with results as DataFrames.
+
+## Quick Start
+
+```python
+import marimo as mo
+
+# Execute SQL (uses DuckDB by default)
+result = mo.sql("""
+    SELECT * FROM 'data.csv'
+    WHERE value > 100
+    LIMIT 10
+""")
+```
+
+The result is automatically displayed as an interactive table and returned as a DataFrame.
+
+## Default Engine: DuckDB
+
+By default, `mo.sql()` uses [DuckDB](https://duckdb.org/), a fast in-process SQL database:
+
+```python
+import marimo as mo
+import pandas as pd
+
+# Create a DataFrame
+df = pd.DataFrame({
+    "name": ["Alice", "Bob", "Charlie"],
+    "age": [25, 30, 35],
+    "city": ["NYC", "SF", "LA"]
+})
+
+# Query the DataFrame directly
+result = mo.sql("""
+    SELECT name, age
+    FROM df
+    WHERE age >= 30
+    ORDER BY age DESC
+""")
+```
+
+<Tip>
+DuckDB can directly query DataFrames in your Python namespace - just reference them by variable name!
+</Tip>
+
+## Supported Databases
+
+marimo supports multiple database engines:
+
+<CardGroup cols={2}>
+
+<Card title="DuckDB" icon="database">
+**Default engine**  
+In-process OLAP database
+```python
+import duckdb
+conn = duckdb.connect()
+```
+</Card>
+
+<Card title="SQLAlchemy" icon="database">
+**Universal SQL toolkit**  
+PostgreSQL, MySQL, SQLite, etc.
+```python
+from sqlalchemy import create_engine
+engine = create_engine("postgresql://...")
+```
+</Card>
+
+<Card title="Ibis" icon="chart-network">
+**Python DataFrames**  
+Unified API for 20+ backends
+```python
+import ibis
+conn = ibis.connect("postgres://...")
+```
+</Card>
+
+<Card title="Clickhouse" icon="bolt">
+**OLAP database**  
+High-performance analytics
+```python
+import clickhouse_connect
+client = clickhouse_connect.get_client()
+```
+</Card>
+
+<Card title="Redshift" icon="aws">
+**AWS data warehouse**  
+Cloud data warehousing
+```python
+import redshift_connector
+conn = redshift_connector.connect()
+```
+</Card>
+
+<Card title="DB-API 2.0" icon="plug">
+**Standard interface**  
+Any PEP 249 connection
+```python
+import psycopg2
+conn = psycopg2.connect()
+```
+</Card>
+
+</CardGroup>
+
+## Custom Database Connections
+
+### SQLAlchemy
+
+```python
+import marimo as mo
+from sqlalchemy import create_engine
+
+# Connect to PostgreSQL
+engine = create_engine("postgresql://user:password@localhost/dbname")
+
+# Execute query
+result = mo.sql(
+    "SELECT * FROM users WHERE created_at > '2024-01-01'",
+    engine=engine
+)
+```
+
+### Ibis
+
+```python
+import marimo as mo
+import ibis
+
+# Connect to any Ibis-supported backend
+conn = ibis.connect("duckdb://my_database.db")
+
+result = mo.sql(
+    "SELECT product, SUM(sales) as total FROM orders GROUP BY product",
+    engine=conn
+)
+```
+
+### DuckDB with Persistence
+
+```python
+import marimo as mo
+import duckdb
+
+# Persistent database file
+conn = duckdb.connect("my_data.duckdb")
+
+# Create table
+mo.sql("""
+    CREATE TABLE IF NOT EXISTS products (
+        id INTEGER,
+        name VARCHAR,
+        price DECIMAL(10,2)
+    )
+""", engine=conn)
+
+# Insert data
+mo.sql("""
+    INSERT INTO products VALUES
+    (1, 'Widget', 19.99),
+    (2, 'Gadget', 29.99)
+""", engine=conn, output=False)  # Don't display output
+```
+
+### Clickhouse
+
+```python
+import marimo as mo
+import clickhouse_connect
+
+client = clickhouse_connect.get_client(
+    host="localhost",
+    port=8123,
+    username="default",
+    password=""
+)
+
+result = mo.sql(
+    "SELECT * FROM system.tables LIMIT 10",
+    engine=client
+)
+```
+
+## Query Features
+
+### Referencing DataFrames
+
+DuckDB can query any DataFrame in scope:
+
+```python
+import marimo as mo
+import pandas as pd
+
+sales = pd.read_csv("sales.csv")
+products = pd.read_csv("products.csv")
+
+# Join DataFrames with SQL
+result = mo.sql("""
+    SELECT 
+        p.name,
+        SUM(s.amount) as total_sales
+    FROM sales s
+    JOIN products p ON s.product_id = p.id
+    GROUP BY p.name
+    ORDER BY total_sales DESC
+""")
+```
+
+### Reading Files
+
+DuckDB can read various file formats directly:
+
+```python
+import marimo as mo
+
+# CSV files
+result = mo.sql("""
+    SELECT * FROM 'data.csv'
+    WHERE column > 100
+""")
+
+# Parquet files  
+result = mo.sql("""
+    SELECT * FROM 'data.parquet'
+""")
+
+# JSON files
+result = mo.sql("""
+    SELECT * FROM 'data.json'
+""")
+
+# Multiple files (glob patterns)
+result = mo.sql("""
+    SELECT * FROM 'sales_*.csv'
+""")
+```
+
+### Remote Files
+
+```python
+import marimo as mo
+
+# Query S3 (requires httpfs extension)
+result = mo.sql("""
+    SELECT * FROM 's3://bucket/data.parquet'
+""")
+
+# Query HTTP(S) URLs
+result = mo.sql("""
+    SELECT * FROM 'https://example.com/data.csv'
+""")
+```
+
+## Output Control
+
+### Disable Output Display
+
+```python
+# Execute without displaying results
+mo.sql(
+    "INSERT INTO table VALUES (1, 2, 3)",
+    output=False
+)
+```
+
+### Output Format
+
+Control the returned DataFrame type via config:
+
+<CodeGroup>
+
+```python Polars
+# Returns polars.DataFrame
+result = mo.sql("SELECT * FROM data")
+type(result)  # polars.DataFrame
+```
+
+```python Pandas
+# Configure in settings or:
+import marimo as mo
+
+# Returns pandas.DataFrame
+result = mo.sql("SELECT * FROM data")
+type(result)  # pandas.DataFrame  
+```
+
+</CodeGroup>
+
+<Note>
+The output format is configured in marimo settings under **SQL** → **Output type**.
+Options: `auto`, `polars`, `lazy-polars`, `pandas`
+</Note>
+
+## Result Limits
+
+Limit large query results automatically:
+
+```python
+import os
+
+# Set default limit (optional)
+os.environ["MARIMO_SQL_DEFAULT_LIMIT"] = "10000"
+
+import marimo as mo
+
+# Query returns max 10,000 rows
+result = mo.sql("SELECT * FROM large_table")
+```
+
+If a query result exceeds the limit, marimo displays a preview and notes the data is truncated.
+
+## EXPLAIN Queries
+
+Analyze query execution plans:
+
+```python
+import marimo as mo
+
+# EXPLAIN shows the query plan
+mo.sql("""
+    EXPLAIN SELECT * FROM large_table WHERE id > 1000
+""")
+```
+
+For DuckDB, `EXPLAIN` output preserves box-drawing characters for readable query plans.
+
+## Advanced Features
+
+### Lazy Evaluation
+
+For large datasets, use lazy evaluation:
+
+```python
+import marimo as mo
+import polars as pl
+
+# Returns polars.LazyFrame - no data loaded yet
+result = mo.sql("SELECT * FROM 'huge_file.parquet'")
+
+type(result)  # polars.LazyFrame
+
+# Data is only loaded when needed
+filtered = result.filter(pl.col("value") > 100).collect()
+```
+
+### DuckDB Extensions
+
+Load DuckDB extensions for additional functionality:
+
+```python
+import duckdb
+import marimo as mo
+
+conn = duckdb.connect()
+
+# Install and load extensions
+conn.execute("INSTALL httpfs")
+conn.execute("LOAD httpfs")
+
+conn.execute("INSTALL spatial")
+conn.execute("LOAD spatial")
+
+# Now you can query S3 and use spatial functions
+mo.sql("""
+    SELECT ST_AsText(geometry) 
+    FROM 's3://bucket/geo_data.parquet'
+""", engine=conn)
+```
+
+### Common Table Expressions (CTEs)
+
+```python
+import marimo as mo
+
+result = mo.sql("""
+    WITH high_value_customers AS (
+        SELECT customer_id, SUM(amount) as total
+        FROM orders
+        GROUP BY customer_id
+        HAVING total > 1000
+    )
+    SELECT c.name, hvc.total
+    FROM high_value_customers hvc
+    JOIN customers c ON hvc.customer_id = c.id
+    ORDER BY hvc.total DESC
+""")
+```
+
+### Window Functions
+
+```python
+import marimo as mo
+
+result = mo.sql("""
+    SELECT 
+        date,
+        revenue,
+        SUM(revenue) OVER (
+            ORDER BY date
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+        ) as rolling_7day
+    FROM daily_sales
+    ORDER BY date
+""")
+```
+
+## Database Catalog
+
+marimo can discover database schemas, tables, and columns automatically for autocomplete and exploration.
+
+### Available Databases
+
+View connected databases in the datasources panel:
+
+- Automatically detects database connections in scope
+- Shows schemas and tables
+- Provides column information
+
+### Autocomplete
+
+When typing SQL queries, marimo provides intelligent autocomplete for:
+
+- Table names
+- Column names  
+- SQL keywords
+- Functions
+
+## Best Practices
+
+<Steps>
+
+<Step title="Use parameterization">
+Avoid SQL injection by using f-strings carefully, or use parameterized queries with SQLAlchemy.
+</Step>
+
+<Step title="Limit large results">
+Set `MARIMO_SQL_DEFAULT_LIMIT` or use `LIMIT` clauses to prevent loading huge datasets.
+</Step>
+
+<Step title="Index your data">
+For repeated queries on the same data, use DuckDB persistent databases with indexes.
+</Step>
+
+<Step title="Choose the right engine">
+- **DuckDB**: Fast analytics on local/cloud files
+- **SQLAlchemy**: OLTP databases (PostgreSQL, MySQL)
+- **Ibis**: Unified API across multiple backends
+</Step>
+
+</Steps>
+
+## Example: Complete Workflow
+
+```python
+import marimo as mo
+import pandas as pd
+
+# 1. Load data
+sales = pd.read_csv("sales.csv")
+customers = pd.read_csv("customers.csv")
+
+# 2. Transform with SQL
+summary = mo.sql("""
+    SELECT 
+        c.segment,
+        COUNT(DISTINCT s.customer_id) as customer_count,
+        SUM(s.amount) as total_revenue,
+        AVG(s.amount) as avg_order_value
+    FROM sales s
+    JOIN customers c ON s.customer_id = c.id
+    WHERE s.date >= '2024-01-01'
+    GROUP BY c.segment
+    ORDER BY total_revenue DESC
+""")
+
+# 3. Visualize results
+import altair as alt
+
+chart = (
+    alt.Chart(summary)
+    .mark_bar()
+    .encode(
+        x="segment",
+        y="total_revenue",
+        color="segment"
+    )
+)
+
+mo.ui.altair_chart(chart)
+```
+
+This workflow demonstrates loading data, transforming it with SQL, and visualizing the results - all with reactive updates.

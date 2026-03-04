@@ -1,0 +1,342 @@
+---
+title: "Deploy as Interactive App"
+description: "Run marimo notebooks as interactive web applications with marimo run"
+---
+
+# Deploy as Interactive App
+
+Deploy your marimo notebooks as read-only web applications that users can interact with. When running as an app, notebooks are presented in a clean interface optimized for end-users, with optional code visibility and built-in authentication.
+
+## Running as an App
+
+Use `marimo run` to launch your notebook as an interactive web application:
+
+<CodeGroup>
+```bash Basic Usage
+marimo run notebook.py
+```
+
+```bash Custom Port and Host
+marimo run notebook.py --host 0.0.0.0 --port 8080
+```
+
+```bash Multiple Notebooks (Gallery)
+marimo run notebook1.py notebook2.py notebook3.py
+marimo run notebooks/  # Serve all notebooks in directory
+```
+</CodeGroup>
+
+The app will be available at `http://localhost:2718` by default (or your specified port).
+
+## App Mode Features
+
+### Read-Only Interface
+
+In app mode, users can:
+- **Interact** with UI elements (sliders, dropdowns, buttons, etc.)
+- **View** outputs and visualizations that update reactively
+- **Navigate** between cells and sections
+- **Download** outputs and data when enabled
+
+Users cannot:
+- Edit or add cells
+- Modify code
+- Access the notebook source (unless `--include-code` is used)
+
+### Code Visibility
+
+By default, code is hidden in app mode. Control code visibility with the `--include-code` flag:
+
+<CodeGroup>
+```bash Hide Code (Default)
+marimo run notebook.py
+```
+
+```bash Show Code
+marimo run notebook.py --include-code
+```
+</CodeGroup>
+
+You can also hide code for specific cells using the cell decorator:
+
+```python
+import marimo as mo
+
+@app.cell(hide_code=True)
+def __(mo):
+    # This cell's code will be hidden even with --include-code
+    mo.md("# Welcome to my app!")
+    return
+```
+
+### Live Reload
+
+Enable automatic reload when notebook files change:
+
+```bash
+marimo run notebook.py --watch
+```
+
+With `--watch`, the app automatically refreshes when you save changes to the notebook file. Great for development!
+
+## Authentication and Access Control
+
+### Token Authentication
+
+Protect your app with password authentication:
+
+<CodeGroup>
+```bash Auto-Generated Token
+marimo run notebook.py --token
+```
+
+```bash Custom Password
+marimo run notebook.py --token-password "your-secret-password"
+```
+
+```bash Password from File
+marimo run notebook.py --token-password-file /path/to/password.txt
+```
+
+```bash Password from stdin
+echo "your-secret-password" | marimo run notebook.py --token-password-file -
+```
+</CodeGroup>
+
+<Note>
+With `--token`, marimo generates a random password and displays it in the terminal. The app URL will include an access token for convenience.
+</Note>
+
+### Authentication Methods
+
+Users can authenticate in three ways:
+
+1. **Login Page**: Browser users are redirected to a login page
+2. **Query Parameter**: `http://localhost:2718?access_token=your-password`
+3. **HTTP Basic Auth**: For programmatic access
+
+```bash
+curl -u "user:your-password" http://localhost:2718/api/status
+```
+
+### Custom Authentication
+
+For production deployments, implement custom authentication using ASGI middleware:
+
+```python
+from fastapi import FastAPI
+import marimo
+
+# Create marimo app
+server = marimo.create_asgi_app().with_app(path="", root="./app.py")
+
+# Create FastAPI app with custom auth
+app = FastAPI()
+app.add_middleware(MyAuthMiddleware)  # Your custom auth
+app.mount("/", server.build())
+```
+
+See the [Authentication Guide](/guides/deploying/authentication) for detailed examples.
+
+## Configuration Options
+
+### Network Configuration
+
+<Steps>
+  <Step title="Host and Port">
+    Specify where the app listens:
+    ```bash
+    marimo run app.py --host 0.0.0.0 --port 8080
+    ```
+  </Step>
+  
+  <Step title="Reverse Proxy">
+    Configure for deployment behind a proxy:
+    ```bash
+    marimo run app.py --proxy https://example.com
+    ```
+  </Step>
+  
+  <Step title="Base URL">
+    Mount app at a subpath:
+    ```bash
+    marimo run app.py --base-url /my-app
+    ```
+  </Step>
+  
+  <Step title="CORS">
+    Allow specific origins:
+    ```bash
+    marimo run app.py --allow-origins https://example.com --allow-origins https://app.com
+    ```
+  </Step>
+</Steps>
+
+### Session Management
+
+```bash
+# Set session timeout (seconds)
+marimo run app.py --session-ttl 300
+
+# Redirect console output to browser
+marimo run app.py --redirect-console-to-browser
+```
+
+<Warning>
+The default session TTL is 120 seconds. Sessions are closed after this duration of inactivity. Set a longer TTL for apps with long-running computations.
+</Warning>
+
+### Advanced Options
+
+<CodeGroup>
+```bash Headless Mode
+# Don't open browser automatically
+marimo run app.py --headless
+```
+
+```bash Skew Protection
+# Prevent version mismatches (enabled by default)
+marimo run app.py --no-skew-protection
+```
+
+```bash Sandboxed Environment
+# Run in isolated environment with uv
+marimo run app.py --sandbox
+```
+</CodeGroup>
+
+## Gallery Mode
+
+Serve multiple notebooks from a single server:
+
+<CodeGroup>
+```bash Multiple Files
+marimo run app1.py app2.py app3.py
+```
+
+```bash Directory
+marimo run notebooks/
+```
+
+```bash Mixed
+marimo run dashboard.py analytics/ reports.py
+```
+</CodeGroup>
+
+When running multiple notebooks, marimo creates a gallery index page where users can select which notebook to view.
+
+## Command-Line Arguments
+
+Pass arguments to your notebook at runtime:
+
+```bash
+marimo run app.py -- --dataset sales --year 2024
+```
+
+Access arguments in your notebook:
+
+```python
+import marimo as mo
+import sys
+
+# Using mo.cli_args() utility
+args = mo.cli_args()
+dataset = args.get("dataset", "default")
+year = int(args.get("year", 2024))
+
+# Or use argparse/simple-parsing
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--dataset", default="default")
+parser.add_argument("--year", type=int, default=2024)
+args = parser.parse_args(sys.argv[1:])
+```
+
+## Health and Status Endpoints
+
+monitor your deployed app:
+
+<CodeGroup>
+```bash Health Check
+curl http://localhost:2718/health
+# Returns: 200 OK
+```
+
+```bash Alternative Health Endpoint
+curl http://localhost:2718/healthz
+# Returns: 200 OK
+```
+
+```bash Status Information
+curl http://localhost:2718/api/status
+# Returns: JSON with server status
+```
+</CodeGroup>
+
+These endpoints are useful for:
+- Load balancer health checks
+- Monitoring and alerting
+- Automated deployment verification
+
+## Best Practices
+
+<Tip>
+**For Production Deployments:**
+
+1. **Use authentication** with `--token-password` or custom ASGI middleware
+2. **Set appropriate session TTL** based on your use case
+3. **Configure CORS** to allow only trusted origins
+4. **Use environment variables** for sensitive configuration
+5. **Enable health checks** for monitoring
+6. **Run behind a reverse proxy** (nginx, Caddy) for SSL/TLS
+7. **Use `--headless`** to prevent browser launch on server
+</Tip>
+
+## Examples
+
+### Public Dashboard
+
+```bash
+marimo run dashboard.py \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --headless \
+  --no-token \
+  --session-ttl 300
+```
+
+### Internal Tool with Auth
+
+```bash
+marimo run analysis.py \
+  --host 0.0.0.0 \
+  --token-password-file /run/secrets/marimo_password \
+  --include-code \
+  --base-url /analytics
+```
+
+### Development Server
+
+```bash
+marimo run app.py \
+  --watch \
+  --include-code \
+  --redirect-console-to-browser
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deploy to Platforms" icon="rocket" href="/deployment-platforms">
+    Deploy your app to cloud platforms and services
+  </Card>
+  <Card title="Run as Script" icon="terminal" href="/deploy-as-script">
+    Execute notebooks as Python scripts
+  </Card>
+  <Card title="WASM Deployment" icon="globe" href="/deploy-wasm">
+    Deploy browser-based notebooks with WebAssembly
+  </Card>
+  <Card title="Authentication" icon="lock" href="/guides/deploying/authentication">
+    Advanced authentication and security
+  </Card>
+</CardGroup>
